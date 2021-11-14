@@ -1,7 +1,6 @@
 /* Crypto/Sha256.c -- SHA-256 Hash
 2021-10-28*/
 
-#include "rotate-bits.h"
 #include "FHsha256.h"
 #include "string.h"
 #include <helib/helib.h>
@@ -122,17 +121,6 @@ FHSHA256::FHsha256_Wt_init(std::vector<std::vector<helib::Ctxt> > data){
   }
   // Wt_Encrypted.insert(Wt_Encrypted.begin(), temp.begin(), temp.end());
   std::cout<<"W0 - W15"<<" init"<<" finished\n";
-  
-  const helib::Context& context =  public_key.getContext();
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  skfile.close();
-  const helib::EncryptedArray& ea = context.getEA();
-  std::vector<long> decrypted_result;
-  helib::CtPtrs_vectorCt result_wrapper(Wt_Encrypted[0]);
-  helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  std::cout << "W0 = " <<std::hex<< decrypted_result[0] << std::endl;
 }
 
 void 
@@ -208,14 +196,14 @@ FHSHA256::FHsha256_Kt_Encrypted(std::vector<helib::Ctxt>&  Kt_Encrypted ,int t){
 }
 
 void
-FHSHA256::FHsha256_Ch(std::vector<helib::Ctxt>& ch){
+FHSHA256::FHsha256_Ch(std::vector<helib::Ctxt>& ch, std::vector<std::vector<helib::Ctxt> > tempState){
   helib::Ctxt scratch(public_key);
   std::vector<helib::Ctxt> temp1_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp2_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp_ctxt(32, scratch);
-  helib::CtPtrs_vectorCt e_wrapper(state[4]);
-  helib::CtPtrs_vectorCt f_wrapper(state[5]);  
-  helib::CtPtrs_vectorCt g_wrapper(state[6]);
+  helib::CtPtrs_vectorCt e_wrapper(tempState[4]);
+  helib::CtPtrs_vectorCt f_wrapper(tempState[5]);  
+  helib::CtPtrs_vectorCt g_wrapper(tempState[6]);
   helib::CtPtrs_vectorCt temp1_wrapper(temp1_ctxt);
   helib::CtPtrs_vectorCt temp2_wrapper(temp2_ctxt);
   helib::CtPtrs_vectorCt temp_wrapper(temp_ctxt);
@@ -242,14 +230,14 @@ FHSHA256::FHsha256_Ch(std::vector<helib::Ctxt>& ch){
 };
 
 void 
-FHSHA256::FHsha256_Ma(std::vector<helib::Ctxt>& Ma){
+FHSHA256::FHsha256_Ma(std::vector<helib::Ctxt>& Ma, std::vector<std::vector<helib::Ctxt> > tempState){
   helib::Ctxt scratch(public_key);
   std::vector<helib::Ctxt> temp1_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp2_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp_ctxt(32, scratch);
-  helib::CtPtrs_vectorCt a_wrapper(state[0]);
-  helib::CtPtrs_vectorCt b_wrapper(state[1]);  
-  helib::CtPtrs_vectorCt c_wrapper(state[2]);
+  helib::CtPtrs_vectorCt a_wrapper(tempState[0]);
+  helib::CtPtrs_vectorCt b_wrapper(tempState[1]);  
+  helib::CtPtrs_vectorCt c_wrapper(tempState[2]);
   helib::CtPtrs_vectorCt temp1_wrapper(temp1_ctxt);
   helib::CtPtrs_vectorCt temp2_wrapper(temp2_ctxt);
   helib::CtPtrs_vectorCt temp_wrapper(temp_ctxt);
@@ -277,12 +265,12 @@ FHSHA256::FHsha256_Ma(std::vector<helib::Ctxt>& Ma){
 };
 
 void 
-FHSHA256::FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0){
+FHSHA256::FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0, std::vector<std::vector<helib::Ctxt> > tempState){
   helib::Ctxt scratch(public_key);
   std::vector<helib::Ctxt> temp1_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp2_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp_ctxt(32, scratch);
-  helib::CtPtrs_vectorCt a_wrapper(state[0]);
+  helib::CtPtrs_vectorCt a_wrapper(tempState[0]);
   helib::CtPtrs_vectorCt temp1_wrapper(temp1_ctxt);
   helib::CtPtrs_vectorCt temp2_wrapper(temp2_ctxt);
   helib::CtPtrs_vectorCt temp_wrapper(temp_ctxt);
@@ -310,12 +298,12 @@ FHSHA256::FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0){
 };
 
 void 
-FHSHA256::FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1){
+FHSHA256::FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1, std::vector<std::vector<helib::Ctxt> > tempState){
   helib::Ctxt scratch(public_key);
   std::vector<helib::Ctxt> temp1_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp2_ctxt(32, scratch);
   std::vector<helib::Ctxt> temp_ctxt(32, scratch);
-  helib::CtPtrs_vectorCt e_wrapper(state[4]);
+  helib::CtPtrs_vectorCt e_wrapper(tempState[4]);
   helib::CtPtrs_vectorCt temp1_wrapper(temp1_ctxt);
   helib::CtPtrs_vectorCt temp2_wrapper(temp2_ctxt);
   helib::CtPtrs_vectorCt temp_wrapper(temp_ctxt);
@@ -344,26 +332,39 @@ FHSHA256::FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1){
 };
 
 void 
-FHSHA256::FHsha256_transform(int r, int groupIndex){
+FHSHA256::FHsha256_transform(int round, int groupIndex){
   
   helib::Ctxt scratch(public_key);
   std::vector<std::vector<helib::Ctxt> > tempState(state);
   int roundNum = 63;
   if(groupIndex == group)
-    roundNum = r;
-  for( int round = 0; round <= roundNum; round++){
+    roundNum = round;
+  for( int r = 0; r <= roundNum; r++){
     std::vector<helib::Ctxt> Kt(32,scratch);
     std::vector<helib::Ctxt> ch;
     std::vector<helib::Ctxt> ma;
     std::vector<helib::Ctxt> sigma0;
     std::vector<helib::Ctxt> sigma1;
 
-    FHsha256_Wt_create(round);
-    FHsha256_Kt_Encrypted(Kt ,round);
-    FHsha256_Ch(ch);
-    FHsha256_Ma(ma);
-    FHsha256_sigma0(sigma0);
-    FHsha256_sigma1(sigma1);
+    FHsha256_Wt_create(r);
+  
+  const helib::Context& context =  public_key.getContext();
+  std::ifstream skfile;
+  skfile.open("sk.json");
+  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
+  skfile.close();
+  const helib::EncryptedArray& ea = context.getEA();
+
+  std::vector<long> wt_result;
+  helib::CtPtrs_vectorCt wt_wrapper(Wt_Encrypted[r]);
+  helib::decryptBinaryNums(wt_result, wt_wrapper, secret_key, ea);
+  std::cout << "W"<< r<<" = " <<std::hex<< wt_result[0] << std::endl;
+
+    FHsha256_Kt_Encrypted(Kt ,r);
+    FHsha256_Ch(ch, tempState);
+    FHsha256_Ma(ma, tempState);
+    FHsha256_sigma0(sigma0, tempState);
+    FHsha256_sigma1(sigma1, tempState);
     std::cout<<"ch ma sigma1 sigma0"<<" generated\n";
     std::vector<helib::Ctxt> temp;
     std::vector<helib::Ctxt> temp1;
@@ -371,7 +372,7 @@ FHSHA256::FHsha256_transform(int r, int groupIndex){
     std::vector<std::vector<helib::Ctxt>> summands = {ch,
                                                     Kt,
                                                     sigma1,
-                                                    Wt_Encrypted[round],
+                                                    Wt_Encrypted[r],
                                                     tempState[7]};
     helib::CtPtrMat_vectorCt oneSum(summands);
     helib::CtPtrs_vectorCt oneSum_wrapper(temp);
@@ -410,15 +411,8 @@ FHSHA256::FHsha256_transform(int r, int groupIndex){
     tempState[1].assign(tempState[0].begin(), tempState[0].end());
     tempState[0].assign(twoSum_wrapper.v.begin(), twoSum_wrapper.v.end());
 
-    std::cout<<"Round "<< round <<" A-H generated\n";
+    std::cout<<"Round "<< r <<" A-H generated\n";
    
-  const helib::Context& context =  public_key.getContext();
-  const helib::EncryptedArray& ea = context.getEA();
-
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  skfile.close();
   for(int i = 0;i < 8; i++){
     std::vector<long> decrypted_result;
     helib::CtPtrs_vectorCt result_wrapper(tempState[i]);
@@ -494,7 +488,7 @@ FHSHA256::FHsha256_transform(int r, int groupIndex){
       helib::CtPtrs_vectorCt(tempState[7]),
       32,
       &unpackSlotEncoding);
-    std::cout<<"round "<< r <<" hash generated\n";
+    std::cout<<"round "<< round <<" hash generated\n";
   }
 };
 
@@ -504,7 +498,7 @@ FHSHA256::FHsha256_update(std::vector<std::vector<helib::Ctxt> > data, size_t el
   long data_index = 0;
   int count = 0;
   group = elementSize / 16;
-  int groupIndex = 0;
+  int groupIndex = 1;
   // 1 elementSize = 32bits
   while (elementSize > 0)
   {

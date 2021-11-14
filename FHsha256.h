@@ -27,10 +27,10 @@ class FHSHA256{
     void FHsha256_Wt_init(std::vector<std::vector<helib::Ctxt> > data);
     void FHsha256_Wt_create(int t);
     void FHsha256_Kt_Encrypted(std::vector<helib::Ctxt>& Kt, int t);
-    void FHsha256_Ch(std::vector<helib::Ctxt>& ch);
-    void FHsha256_Ma(std::vector<helib::Ctxt>& Ma);
-    void FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0);
-    void FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1);
+    void FHsha256_Ch(std::vector<helib::Ctxt>& ch, std::vector<std::vector<helib::Ctxt> > tempState);
+    void FHsha256_Ma(std::vector<helib::Ctxt>& Ma, std::vector<std::vector<helib::Ctxt> > tempState);
+    void FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0, std::vector<std::vector<helib::Ctxt> > tempState);
+    void FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1, std::vector<std::vector<helib::Ctxt> > tempState);
     void FHsha256_transform(int r, int groupIndex);
     // void FHsha256_final(FHsha256_t *p, unsigned char *digest);
   

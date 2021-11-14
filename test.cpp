@@ -11,7 +11,7 @@ void keygen(){
   long p = 2;
   long m = 4095;
   long r = 1;
-  long bits = 500;
+  long bits = 700;
   // long bits = 32;
   long c = 2;
   std::vector<long> mvec = {7, 5, 9, 13};
@@ -159,7 +159,7 @@ int main (void) {
   // hash.FHsha256_transform(0);
 
 
-  hash.FHsha256_update(encrypted, 16, 0);
+  hash.FHsha256_update(encrypted, 16, 5);
 
   // std::ifstream skfile;
   // skfile.open("sk.json");
