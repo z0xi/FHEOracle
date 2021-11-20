@@ -185,14 +185,14 @@ FHSHA256::FHsha256_Kt_Encrypted(std::vector<helib::Ctxt>&  Kt_Encrypted ,int t){
   std::cout<<"K"<<t<<" encrypted"<<" finished\n";
   
 
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  skfile.close();
-  std::vector<long> decrypted_result;
-  helib::CtPtrs_vectorCt result_wrapper(Kt_Encrypted);
-  helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  std::cout << "K"<<t <<" = " <<std::hex<< decrypted_result[0] << std::endl;
+  // std::ifstream skfile;
+  // skfile.open("sk");
+  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  // skfile.close();
+  // std::vector<long> decrypted_result;
+  // helib::CtPtrs_vectorCt result_wrapper(Kt_Encrypted);
+  // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+  // std::cout << "K"<<t <<" = " <<std::hex<< decrypted_result[0] << std::endl;
 }
 
 void
@@ -217,16 +217,16 @@ FHSHA256::FHsha256_Ch(std::vector<helib::Ctxt>& ch, std::vector<std::vector<heli
     ch.push_back(temp2_wrapper.v[i]);
   }
  
-  const helib::Context& context =  public_key.getContext();
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  skfile.close();
-  std::vector<long> decrypted_result;
-  const helib::EncryptedArray& ea = context.getEA();
-  helib::CtPtrs_vectorCt result_wrapper(ch);
-  helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  std::cout << "ch = " << std::hex<<decrypted_result[0] << std::endl;
+  // const helib::Context& context =  public_key.getContext();
+  // std::ifstream skfile;
+  // skfile.open("sk");
+  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  // skfile.close();
+  // std::vector<long> decrypted_result;
+  // const helib::EncryptedArray& ea = context.getEA();
+  // helib::CtPtrs_vectorCt result_wrapper(ch);
+  // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+  // std::cout << "ch = " << std::hex<<decrypted_result[0] << std::endl;
 };
 
 void 
@@ -252,16 +252,16 @@ FHSHA256::FHsha256_Ma(std::vector<helib::Ctxt>& Ma, std::vector<std::vector<heli
     Ma.push_back(temp2_wrapper.v[i]);
   }
 
-  const helib::Context& context =  public_key.getContext();
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  skfile.close();
-  std::vector<long> decrypted_result;
-  const helib::EncryptedArray& ea = context.getEA();
-  helib::CtPtrs_vectorCt result_wrapper(Ma);
-  helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  std::cout << "Ma = " <<std::hex<< decrypted_result[0] << std::endl;
+  // const helib::Context& context =  public_key.getContext();
+  // std::ifstream skfile;
+  // skfile.open("sk");
+  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  // skfile.close();
+  // std::vector<long> decrypted_result;
+  // const helib::EncryptedArray& ea = context.getEA();
+  // helib::CtPtrs_vectorCt result_wrapper(Ma);
+  // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+  // std::cout << "Ma = " <<std::hex<< decrypted_result[0] << std::endl;
 };
 
 void 
@@ -285,16 +285,16 @@ FHSHA256::FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0, std::vector<std::vec
     sigma0.push_back(temp2_wrapper.v[i]);
   }
 
-  const helib::Context& context =  public_key.getContext();
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  const helib::EncryptedArray& ea = context.getEA();
-  skfile.close();
-  std::vector<long> decrypted_result;
-  helib::CtPtrs_vectorCt result_wrapper(sigma0);
-  helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  std::cout << "sigma0 = " <<std::hex<< decrypted_result[0] << std::endl;
+  // const helib::Context& context =  public_key.getContext();
+  // std::ifstream skfile;
+  // skfile.open("sk");
+  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  // const helib::EncryptedArray& ea = context.getEA();
+  // skfile.close();
+  // std::vector<long> decrypted_result;
+  // helib::CtPtrs_vectorCt result_wrapper(sigma0);
+  // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+  // std::cout << "sigma0 = " <<std::hex<< decrypted_result[0] << std::endl;
 };
 
 void 
@@ -319,16 +319,16 @@ FHSHA256::FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1, std::vector<std::vec
   }
    
    
-  const helib::Context& context =  public_key.getContext();
-  std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  skfile.close();
-  std::vector<long> decrypted_result;
-  const helib::EncryptedArray& ea = context.getEA();
-  helib::CtPtrs_vectorCt result_wrapper(sigma1);
-  helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  std::cout << "sigma1 = " << std::hex<<decrypted_result[0] << std::endl;
+  // const helib::Context& context =  public_key.getContext();
+  // std::ifstream skfile;
+  // skfile.open("sk");
+  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  // skfile.close();
+  // std::vector<long> decrypted_result;
+  // const helib::EncryptedArray& ea = context.getEA();
+  // helib::CtPtrs_vectorCt result_wrapper(sigma1);
+  // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+  // std::cout << "sigma1 = " << std::hex<<decrypted_result[0] << std::endl;
 };
 
 void 
@@ -350,8 +350,8 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
   
   const helib::Context& context =  public_key.getContext();
   std::ifstream skfile;
-  skfile.open("sk.json");
-  helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
+  skfile.open("sk");
+  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
   skfile.close();
   const helib::EncryptedArray& ea = context.getEA();
 
@@ -412,23 +412,29 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
     tempState[0].assign(twoSum_wrapper.v.begin(), twoSum_wrapper.v.end());
 
     std::cout<<"Round "<< r <<" A-H generated\n";
-   
-  for(int i = 0;i < 8; i++){
+
     std::vector<long> decrypted_result;
-    helib::CtPtrs_vectorCt result_wrapper(tempState[i]);
+    helib::CtPtrs_vectorCt result_wrapper(tempState[0]);
     helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-    std::cout << "Round " << r << " state "<< i << " : "<<std::hex<< decrypted_result[0] << std::endl;
-  }
-    std::vector<long> decrypted_result;
-    helib::CtPtrs_vectorCt result_wrapper(temp);
-    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-    std::cout << "temp = " <<std::hex<< decrypted_result[0] << std::endl;
-    helib::CtPtrs_vectorCt result1_wrapper(temp1);
-    helib::decryptBinaryNums(decrypted_result, result1_wrapper, secret_key, ea);
-    std::cout << "temp1 = " <<std::hex<< decrypted_result[0] << std::endl;
-    helib::CtPtrs_vectorCt result2_wrapper(temp2);
-    helib::decryptBinaryNums(decrypted_result, result2_wrapper, secret_key, ea);
-    std::cout << "temp2 = " <<std::hex<< decrypted_result[0] << std::endl;
+    std::cout << "Round " << r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
+    // if(r % 3 == 2){
+        for(int j = 0; j < 32;j++){
+         public_key.thinReCrypt(tempState[0][j]);
+         public_key.thinReCrypt(tempState[4][j]);
+       }
+      std::cout << "Bootstrap finished"<<std::endl;
+    // }
+
+    // std::vector<long> decrypted_result;
+    // helib::CtPtrs_vectorCt result_wrapper(temp);
+    // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    // std::cout << "temp = " <<std::hex<< decrypted_result[0] << std::endl;
+    // helib::CtPtrs_vectorCt result1_wrapper(temp1);
+    // helib::decryptBinaryNums(decrypted_result, result1_wrapper, secret_key, ea);
+    // std::cout << "temp1 = " <<std::hex<< decrypted_result[0] << std::endl;
+    // helib::CtPtrs_vectorCt result2_wrapper(temp2);
+    // helib::decryptBinaryNums(decrypted_result, result2_wrapper, secret_key, ea);
+    // std::cout << "temp2 = " <<std::hex<< decrypted_result[0] << std::endl;
   }
 
   if(roundNum == 63){
@@ -515,4 +521,4 @@ FHSHA256::FHsha256_update(std::vector<std::vector<helib::Ctxt> > data, size_t el
       buffer.clear();
     }
   }
-}
+};

@@ -8,17 +8,25 @@
 #include <helib/intraSlot.h>
 
 void keygen(){
+ // Plaintext prime modulus.
   long p = 2;
+  // Cyclotomic polynomial - defines phi(m).
   long m = 4095;
+  // Hensel lifting (default = 1).
   long r = 1;
-  long bits = 700;
-  // long bits = 32;
+  // Number of bits of the modulus chain.
+  long bits = 600;
+  // Number of columns of Key-Switching matrix (typically 2 or 3).
   long c = 2;
+  // Factorisation of m required for bootstrapping.
   std::vector<long> mvec = {7, 5, 9, 13};
+  // Generating set of Zm* group.
   std::vector<long> gens = {2341, 3277, 911};
+  // Orders of the previous generators.
   std::vector<long> ords = {6, 4, 6};
   std::cout << "Initialising context object..." << std::endl;
   // Initialize the context.
+  
   // This object will hold information about the algebra created from the
   // previously set parameters.
   helib::Context context = helib::ContextBuilder<helib::BGV>()
@@ -32,37 +40,44 @@ void keygen(){
                                .bootstrappable(true)
                                .mvec(mvec)
                                .build();
-
-
+                               
+  context.printout();
+  std::cout << std::endl;
+  // Print the security level.
+  std::cout << "Security: " << context.securityLevel() << std::endl;
   std::cout << "Creating secret key..." << std::endl;
   // Create a secret key associated with the context.
   helib::SecKey secret_key(context);
   // Generate the secret key.
   secret_key.GenSecKey();
-
+  addSome1DMatrices(secret_key);
+  addFrbMatrices(secret_key);
   // Generate bootstrapping data.
   secret_key.genRecryptData();
+  // helib::addFrbMatrices(secret_key);
+  // helib::addSome1DMatrices(secret_key);
   // Public key management.
   // Set the secret key (upcast: SecKey is a subclass of PubKey).
    helib::PubKey& public_key = secret_key;
 
   // 以写模式打开文件
   std::ofstream con;
-  con.open("context.json");
-  context.writeToJSON(con);
+  con.open("context");
+  context.writeTo(con);
   con.close();
 
   // 以写模式打开文件
   std::ofstream skfile;
-  skfile.open("sk.json");
-  secret_key.writeToJSON(skfile);
+  skfile.open("sk");
+  secret_key.writeTo(skfile);
   skfile.close();
 
     // 以写模式打开文件
   std::ofstream pkfile;
-  pkfile.open("pk.json");
-  public_key.writeToJSON(pkfile);
+  pkfile.open("pk");
+  public_key.writeTo(pkfile);
   pkfile.close();
+
 }
 
 int main (void) {
@@ -70,13 +85,15 @@ int main (void) {
   keygen();
  
   std::ifstream con,pkfile;                              
-  con.open("context.json");
-  helib::Context context =  helib::Context::readFromJSON(con);
-  pkfile.open("pk.json");
-  helib::PubKey public_key = helib::PubKey::readFromJSON(pkfile,context);
-  pkfile.close();
+  con.open("context");
+
+  helib::Context context =  helib::Context::readFrom(con);
   con.close();
+  pkfile.open("pk");
+  helib::PubKey public_key = helib::PubKey::readFrom(pkfile,context);
+  pkfile.close();
   // Get the EncryptedArray of the context.
+
   const helib::EncryptedArray& ea = context.getEA();
 
   // // Build the unpack slot encoding.
@@ -159,7 +176,7 @@ int main (void) {
   // hash.FHsha256_transform(0);
 
 
-  hash.FHsha256_update(encrypted, 16, 5);
+  hash.FHsha256_update(encrypted, 16, 63);
 
   // std::ifstream skfile;
   // skfile.open("sk.json");
