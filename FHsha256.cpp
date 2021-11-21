@@ -91,6 +91,8 @@ FHSHA256::FHsha256_H0_init()
 
 void 
 FHSHA256::FHsha256_Wt_init(std::vector<std::vector<helib::Ctxt> > data){
+  // Init 
+  Wt_Encrypted.clear();
   // trans to Big ending
   for(int i = 0; i < 16; i++){
     std::vector<helib::Ctxt> tempCtxt;
@@ -162,29 +164,12 @@ FHSHA256::FHsha256_Wt_create(int t){
   rightBitwiseShift(temp3_wrapper,  helib::CtPtrs_vectorCt(Wt_Encrypted[t-15]), 3);
   bitwiseXOR(temp_wrapper,temp1_wrapper,temp2_wrapper);
   bitwiseXOR(xima0_wrapper,temp_wrapper,temp3_wrapper);
-//     const helib::Context& context = public_key.getContext();
-// const helib::EncryptedArray& ea = context.getEA();
-//     std::ifstream skfile;
-//   skfile.open("sk");
-//   helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
-//   skfile.close();
-//   std::vector<long> decrypted_result;
-//   helib::CtPtrs_vectorCt result_wrapper(xima0);
-//   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-
-//   std::cout << "xima0 = " << decrypted_result[0] << std::endl;
 
   rotateRightBitwiseShift(temp1_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 17);
   rotateRightBitwiseShift(temp2_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 19);
   rightBitwiseShift(temp3_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 10);
   bitwiseXOR(temp_wrapper,temp1_wrapper,temp2_wrapper);
   bitwiseXOR(xima1_wrapper,temp_wrapper,temp3_wrapper);
-
-
-  // helib::CtPtrs_vectorCt result1_wrapper(xima1);
-  // helib::decryptBinaryNums(decrypted_result, result1_wrapper, secret_key, ea);
-
-  // std::cout << "xiam1 = " << decrypted_result[0] << std::endl;
 
   std::vector<std::vector<helib::Ctxt>> summands = {xima0,
                                                     xima1,
@@ -368,6 +353,13 @@ void
 FHSHA256::FHsha256_transform(int round, int groupIndex){
   
   helib::Ctxt scratch(public_key);
+  const helib::Context& context =  public_key.getContext();
+  std::ifstream skfile;
+  skfile.open("sk");
+  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  skfile.close();
+  const helib::EncryptedArray& ea = context.getEA();
+
   std::vector<std::vector<helib::Ctxt> > tempState(state);
   int roundNum = 63;
   if(groupIndex == group)
@@ -380,18 +372,11 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
     std::vector<helib::Ctxt> sigma1;
 
     FHsha256_Wt_create(r);
-  
-  const helib::Context& context =  public_key.getContext();
-  std::ifstream skfile;
-  skfile.open("sk");
-  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
-  skfile.close();
-  const helib::EncryptedArray& ea = context.getEA();
 
-  std::vector<long> wt_result;
-  helib::CtPtrs_vectorCt wt_wrapper(Wt_Encrypted[r]);
-  helib::decryptBinaryNums(wt_result, wt_wrapper, secret_key, ea);
-  std::cout << "W"<< r<<" = " <<std::hex<< wt_result[0] << std::endl;
+    // std::vector<long> wt_result;
+    // helib::CtPtrs_vectorCt wt_wrapper(Wt_Encrypted[r]);
+    // helib::decryptBinaryNums(wt_result, wt_wrapper, secret_key, ea);
+    // std::cout << "W"<< r<<" = " <<std::hex<< wt_result[0] << std::endl;
 
     FHsha256_Kt_Encrypted(Kt ,r);
     FHsha256_Ch(ch, tempState);
@@ -449,25 +434,12 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
     std::vector<long> decrypted_result;
     helib::CtPtrs_vectorCt result_wrapper(tempState[0]);
     helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-    std::cout << "Round " << r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
-    // if(r % 3 == 2){
-        for(int j = 0; j < 32;j++){
-         public_key.thinReCrypt(tempState[0][j]);
-         public_key.thinReCrypt(tempState[4][j]);
-       }
-      std::cout << "Bootstrap finished"<<std::endl;
-    // }
-
-    // std::vector<long> decrypted_result;
-    // helib::CtPtrs_vectorCt result_wrapper(temp);
-    // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-    // std::cout << "temp = " <<std::hex<< decrypted_result[0] << std::endl;
-    // helib::CtPtrs_vectorCt result1_wrapper(temp1);
-    // helib::decryptBinaryNums(decrypted_result, result1_wrapper, secret_key, ea);
-    // std::cout << "temp1 = " <<std::hex<< decrypted_result[0] << std::endl;
-    // helib::CtPtrs_vectorCt result2_wrapper(temp2);
-    // helib::decryptBinaryNums(decrypted_result, result2_wrapper, secret_key, ea);
-    // std::cout << "temp2 = " <<std::hex<< decrypted_result[0] << std::endl;
+    std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
+    for(int j = 0; j < 32;j++){
+      public_key.thinReCrypt(tempState[0][j]);
+      public_key.thinReCrypt(tempState[4][j]);
+    }
+    std::cout << "A E Bootstrap finished"<<std::endl;
   }
 
   if(roundNum == 63){
@@ -527,7 +499,20 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
       helib::CtPtrs_vectorCt(tempState[7]),
       32,
       &unpackSlotEncoding);
-    std::cout<<"round "<< round <<" hash generated\n";
+
+    std::cout<<"Group "<< groupIndex << " hash generated\n";
+
+    std::vector<long> state_result;
+    helib::CtPtrs_vectorCt state_wrapper(state[0]);
+    helib::decryptBinaryNums(state_result, state_wrapper, secret_key, ea);
+    std::cout<<"Group "<< groupIndex << " hash :" <<std::hex<< state_result[0] << std::endl;
+
+    for(int j = 0; j < 32;j++){
+      for( int k = 0; k < 8; k++){
+         public_key.thinReCrypt(state[k][j]);
+      }
+    }
+    std::cout << "Hash state Bootstrap finished"<<std::endl;
   }
 };
 
@@ -538,7 +523,7 @@ FHSHA256::FHsha256_update(std::vector<std::vector<helib::Ctxt> > data, size_t el
   int count = 0;
   group = elementSize / 16;
   int groupIndex = 1;
-  // 1 elementSize = 32bits
+  // P.S. 1 elementSize = 32bits
   while (elementSize > 0)
   {
     buffer.push_back(data[data_index]);

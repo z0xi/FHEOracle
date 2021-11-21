@@ -69,7 +69,8 @@ int main(int argc, char* argv[])
   helib::SecKey secret_key(context);
   // Generate the secret key.
   secret_key.GenSecKey();
-
+  addSome1DMatrices(secret_key);
+  addFrbMatrices(secret_key);
   // Generate bootstrapping data.
   secret_key.genRecryptData();
 
@@ -176,6 +177,15 @@ int main(int argc, char* argv[])
   std::cout << "a + b + c耗时：" << std::dec <<(endTime.time-startTime.time)*1000 + (endTime.millitm - startTime.millitm) << "毫秒" << std::endl;
   
   ftime(&startTime);
+  for(int i = 0; i < 32; i++){
+    public_key.thinReCrypt(encrypted_result[i]);
+  }
+  ftime(&endTime);  
+  std::cout << "thin bootstrap 32Bits耗时：" << std::dec << (endTime.time-startTime.time)*1000 + (endTime.millitm - startTime.millitm) << "毫秒" << std::endl;
+
+  decrypted_result.clear();
+
+  ftime(&startTime);
   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
   ftime(&endTime);  
   std::cout << "解密32Bits耗时：" << std::dec << (endTime.time-startTime.time)*1000 + (endTime.millitm - startTime.millitm) << "毫秒" << std::endl;
@@ -236,6 +246,14 @@ int main(int argc, char* argv[])
   std::cout << "a + b耗时：" << std::dec<< (endTime.time-startTime.time)*1000 + (endTime.millitm - startTime.millitm) << "毫秒" << std::endl;
   helib::decryptBinaryNums(decrypted_result, addtwo_wrapper, secret_key, ea);
   std::cout << "a + b  = " <<  std::hex<< decrypted_result.back() <<  "\n"<<std::endl;
+
+  ftime(&startTime);
+  for(int i = 0; i < 32; i++){
+    public_key.reCrypt(encrypted_result[i]);
+  }
+  ftime(&endTime);  
+  std::cout << "bootstrap 32Bits耗时：" << std::dec << (endTime.time-startTime.time)*1000 + (endTime.millitm - startTime.millitm) << "毫秒" << std::endl;
+
 
   // encrypted_result.resize(4lu, scratch);
   // decrypted_result.clear();

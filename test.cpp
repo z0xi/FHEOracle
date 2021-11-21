@@ -104,13 +104,13 @@ int main (void) {
   std::cout << "Number of slots: " << nslots << std::endl;
   
   uint8_t buf[64] = {0x1,0x2,0x3,0x4,0x5,0x6, 0x7,0x8, 
-  0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-   0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8, 
-   0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-   0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-   0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-   0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-   0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8};
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8, 
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8};
 
   long bitSize = 32;
   // long outSize = 2 * bitSize;
@@ -119,14 +119,23 @@ int main (void) {
     memcpy(&message[i],&buf[ i*4 ],4);
   }
 
-  std::cout << "Pre-encryption data:" << std::endl;
-  std::cout << "message = " << message << std::endl;
+  uint8_t buf_1[64] = {0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5, 
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
+    0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,};
+  long message_1[16];
+  for(int i = 0; i < 16; i++){
+    memcpy(&message_1[i],&buf_1[ i*4 ],4);
+  }
 
   // Use a scratch ciphertext to populate vectors.
   // 16 vector and content is scratch
   helib::Ctxt scratch(public_key);
-  std::vector<std::vector<helib::Ctxt>> encrypted(16 ,std::vector<helib::Ctxt>(bitSize, scratch));
-
+  std::vector<std::vector<helib::Ctxt>> encryptedMessage(16 ,std::vector<helib::Ctxt>(bitSize, scratch));
 
   // Encrypt 4Bytes in each cycle.
   for (long i = 0; i < bitSize; ++i) {
@@ -136,9 +145,26 @@ int main (void) {
             slot = (message[j] >> i) & 1;
     }
     for (int k = 0 ;k < 16; k++)
-      ea.encrypt(encrypted[k][i], public_key, m_vec[k]);
+      ea.encrypt(encryptedMessage[k][i], public_key, m_vec[k]);
   }
-  
+  std::cout << "First group encrypted " << std::endl;
+
+
+  std::vector<std::vector<helib::Ctxt>> encryptedMessage_1(16 ,std::vector<helib::Ctxt>(bitSize, scratch));
+    // Encrypt 4Bytes in each cycle.
+  for (long i = 0; i < bitSize; ++i) {
+    std::vector<std::vector<long>> m_vec(16,std::vector<long>(ea.size()));
+    for( int j = 0; j < 16; j++){
+          for (auto& slot : m_vec[j])
+            slot = (message_1[j] >> i) & 1;
+    }
+    for (int k = 0 ;k < 16; k++)
+      ea.encrypt(encryptedMessage_1[k][i], public_key, m_vec[k]);
+  }
+  std::cout << "Second group encrypted " << std::endl;
+
+  int sendMessageSize = 16 * 2;
+
   // std::ofstream ciphertext;
   // std::ofstream ciphertext1;
   // ciphertext.open("ciphertext.json");
@@ -148,22 +174,20 @@ int main (void) {
   // ciphertext.close();
   // ciphertext1.close();
 
-  // std::ifstream skfile;
-  // skfile.open("sk.json");
-  // helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  // skfile.close();
-  // std::vector<long> decrypted_result;
-  // helib::CtPtrs_vectorCt result_wrapper(encrypted[1]);
-  // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-
-  // std::cout << "answer = " << decrypted_result[0] << std::endl;
-  // std::cout << "answer = " << decrypted_result[1] << std::endl;
-
-
+  int receivedMessageSize = sendMessageSize;
+  int round = 17;
+  std::vector<std::vector<helib::Ctxt>> receivedMessage;
+  for( int i = 0; i < 16; i++){
+    receivedMessage.push_back(encryptedMessage[i]);
+  }
+  for( int i = 0; i < 16; i++){
+    receivedMessage.push_back(encryptedMessage_1[i]);
+  }
   FHSHA256 hash(public_key);
   hash.FHsha256_H0_init();
   // hash.FHsha256_Wt_init(encrypted);
   // hash.FHsha256_Wt_create(16);
+  // hash.FHsha256_Wt_create(17);
   // hash.FHsha256_Kt_Encrypted(0);
   // std::vector<helib::Ctxt> ch;
   // std::vector<helib::Ctxt> ma;
@@ -176,7 +200,7 @@ int main (void) {
   // hash.FHsha256_transform(0);
 
 
-  hash.FHsha256_update(encrypted, 16, 63);
+  hash.FHsha256_update(receivedMessage, receivedMessageSize, round);
 
   // std::ifstream skfile;
   // skfile.open("sk.json");
@@ -188,10 +212,6 @@ int main (void) {
   //   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
   //   std::cout << "hash " << i << " : "<<std::hex<< decrypted_result[0] << std::endl;
   // }
-  // FHsha256_update(&hash, encrypted, 16);
-  // sha256_final(&hash, buf);
 
-  // for(int i =0;i < 32;i++) 
-  //   printf("%x",buf[i]);
 }
  
