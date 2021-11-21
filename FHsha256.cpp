@@ -167,6 +167,9 @@ FHSHA256::FHsha256_Wt_create(int t){
     summands_wrapper,
     32,                    // sizeLimit=0 means use as many bits as needed.
     &unpackSlotEncoding); // Information needed for bootstrapping.
+  for( int i = 0;i < 32; i++){
+      public_key.thinReCrypt(w[i]);
+  }
   Wt_Encrypted.push_back(Wt_wrapper.v);
   std::cout<<"W"<<t<<" generated\n";
 }
