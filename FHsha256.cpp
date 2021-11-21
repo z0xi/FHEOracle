@@ -48,6 +48,19 @@ void rotateRightBitwiseShift(helib::CtPtrs& output, const helib::CtPtrs& input, 
     *output[i] = *input[j];
 }
 
+void rightBitwiseShift(helib::CtPtrs& output, const helib::CtPtrs& input, const long shamt)
+{
+  // helib::assertEq(shamt >= 0, "Shift amount must be positive.");
+  // helib::assertEq(output.size(),
+  //          input.size(),
+  //          "output and input must have the same size.");
+ 
+  for (long i = 0; i < output.size() - shamt; ++i)
+    *output[i] = *input[i + shamt];
+  for (long i = output.size() - shamt; i < output.size(); ++i)
+    output[i]->clear();
+}
+
 void
 FHSHA256::FHsha256_H0_init()
 {
@@ -129,7 +142,7 @@ FHSHA256::FHsha256_Wt_create(int t){
     return;
   }
   helib::Ctxt scratch(public_key);
-  std::vector<helib::Ctxt> w;
+  std::vector<helib::Ctxt> w(32, scratch);;
   std::vector<helib::Ctxt> temp1(32, scratch);
   std::vector<helib::Ctxt> temp2(32, scratch);
   std::vector<helib::Ctxt> temp3(32, scratch);
@@ -146,15 +159,32 @@ FHSHA256::FHsha256_Wt_create(int t){
 
   rotateRightBitwiseShift(temp1_wrapper,  helib::CtPtrs_vectorCt(Wt_Encrypted[t-15]), 7);
   rotateRightBitwiseShift(temp2_wrapper,  helib::CtPtrs_vectorCt(Wt_Encrypted[t-15]), 18);
-  rotateRightBitwiseShift(temp3_wrapper,  helib::CtPtrs_vectorCt(Wt_Encrypted[t-15]), 3);
+  rightBitwiseShift(temp3_wrapper,  helib::CtPtrs_vectorCt(Wt_Encrypted[t-15]), 3);
   bitwiseXOR(temp_wrapper,temp1_wrapper,temp2_wrapper);
   bitwiseXOR(xima0_wrapper,temp_wrapper,temp3_wrapper);
+//     const helib::Context& context = public_key.getContext();
+// const helib::EncryptedArray& ea = context.getEA();
+//     std::ifstream skfile;
+//   skfile.open("sk");
+//   helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+//   skfile.close();
+//   std::vector<long> decrypted_result;
+//   helib::CtPtrs_vectorCt result_wrapper(xima0);
+//   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+
+//   std::cout << "xima0 = " << decrypted_result[0] << std::endl;
 
   rotateRightBitwiseShift(temp1_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 17);
   rotateRightBitwiseShift(temp2_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 19);
-  rotateRightBitwiseShift(temp3_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 10);
+  rightBitwiseShift(temp3_wrapper, helib::CtPtrs_vectorCt(Wt_Encrypted[t-2]), 10);
   bitwiseXOR(temp_wrapper,temp1_wrapper,temp2_wrapper);
   bitwiseXOR(xima1_wrapper,temp_wrapper,temp3_wrapper);
+
+
+  // helib::CtPtrs_vectorCt result1_wrapper(xima1);
+  // helib::decryptBinaryNums(decrypted_result, result1_wrapper, secret_key, ea);
+
+  // std::cout << "xiam1 = " << decrypted_result[0] << std::endl;
 
   std::vector<std::vector<helib::Ctxt>> summands = {xima0,
                                                     xima1,
