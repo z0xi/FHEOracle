@@ -443,6 +443,7 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
   }
 
   if(roundNum == 63){
+    std::vector<std::vector<helib::Ctxt> > tempState_1(state);
     helib::CtPtrs_vectorCt state0_wrapper(state[0]);
     helib::CtPtrs_vectorCt state1_wrapper(state[1]);
     helib::CtPtrs_vectorCt state2_wrapper(state[2]);
@@ -453,49 +454,49 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
     helib::CtPtrs_vectorCt state7_wrapper(state[7]);
     helib::addTwoNumbers(
       state0_wrapper,
-      helib::CtPtrs_vectorCt(state[0]),
+      helib::CtPtrs_vectorCt(tempState_1[0]),
       helib::CtPtrs_vectorCt(tempState[0]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state1_wrapper,
-      helib::CtPtrs_vectorCt(state[1]),
+      helib::CtPtrs_vectorCt(tempState_1[1]),
       helib::CtPtrs_vectorCt(tempState[1]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state2_wrapper,
-      helib::CtPtrs_vectorCt(state[2]),
+      helib::CtPtrs_vectorCt(tempState_1[2]),
       helib::CtPtrs_vectorCt(tempState[2]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state3_wrapper,
-      helib::CtPtrs_vectorCt(state[3]),
+      helib::CtPtrs_vectorCt(tempState_1[3]),
       helib::CtPtrs_vectorCt(tempState[3]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state4_wrapper,
-      helib::CtPtrs_vectorCt(state[4]),
+      helib::CtPtrs_vectorCt(tempState_1[4]),
       helib::CtPtrs_vectorCt(tempState[4]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state5_wrapper,
-      helib::CtPtrs_vectorCt(state[5]),
+      helib::CtPtrs_vectorCt(tempState_1[5]),
       helib::CtPtrs_vectorCt(tempState[5]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state6_wrapper,
-      helib::CtPtrs_vectorCt(state[6]),
+      helib::CtPtrs_vectorCt(tempState_1[6]),
       helib::CtPtrs_vectorCt(tempState[6]),
       32,
       &unpackSlotEncoding);
     helib::addTwoNumbers(
       state7_wrapper,
-      helib::CtPtrs_vectorCt(state[7]),
+      helib::CtPtrs_vectorCt(tempState_1[7]),
       helib::CtPtrs_vectorCt(tempState[7]),
       32,
       &unpackSlotEncoding);
