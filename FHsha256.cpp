@@ -183,7 +183,9 @@ FHSHA256::FHsha256_Wt_create(int t){
     32,                    // sizeLimit=0 means use as many bits as needed.
     &unpackSlotEncoding); // Information needed for bootstrapping.
   for( int i = 0;i < 32; i++){
+      // std::cout << "W" << t<< " bit "<< i<< " before thinRecrypt capacity:"<< w[i].bitCapacity() <<std::endl;
       public_key.thinReCrypt(w[i]);
+      // std::cout << "W" << t<< " bit "<< i<< " after thinRecrypt capacity:"<< w[i].bitCapacity() <<std::endl;
   }
   Wt_Encrypted.push_back(Wt_wrapper.v);
   std::cout<<"W"<<t<<" generated\n";
@@ -431,13 +433,17 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
 
     std::cout<<"Round "<< r <<" A-H generated\n";
 
-    std::vector<long> decrypted_result;
-    helib::CtPtrs_vectorCt result_wrapper(tempState[0]);
-    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-    std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
+    // std::vector<long> decrypted_result;
+    // helib::CtPtrs_vectorCt result_wrapper(tempState[0]);
+    // helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
     for(int j = 0; j < 32;j++){
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[0][j].bitCapacity() <<std::endl;
       public_key.thinReCrypt(tempState[0][j]);
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0 " << "bit "<< j<< " after thinRecrypt capacity:"<< tempState[0][j].bitCapacity() <<std::endl;
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "4 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[4][j].bitCapacity() <<std::endl;
       public_key.thinReCrypt(tempState[4][j]);
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "4 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[4][j].bitCapacity() <<std::endl;
     }
     std::cout << "A E Bootstrap finished"<<std::endl;
   }
@@ -510,7 +516,9 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
 
     for(int j = 0; j < 32;j++){
       for( int k = 0; k < 8; k++){
-         public_key.thinReCrypt(state[k][j]);
+        // std::cout << "Hash state " << k<< " bit "<< j<< " before thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
+        public_key.thinReCrypt(state[k][j]);
+        // std::cout << "Hash state " << k<< " bit "<< j<< " after thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
       }
     }
     std::cout << "Hash state Bootstrap finished"<<std::endl;

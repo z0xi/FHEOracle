@@ -2,6 +2,7 @@
 #include <assert.h>
 #include <string.h>
 #include "FHsha256.h"
+#include "SHA256.h"
 
 #include <helib/helib.h>
 #include <helib/binaryArith.h>
@@ -9,21 +10,31 @@
 
 void keygen(){
  // Plaintext prime modulus.
-  long p = 2;
-  // Cyclotomic polynomial - defines phi(m).
-  long m = 4095;
-  // Hensel lifting (default = 1).
-  long r = 1;
-  // Number of bits of the modulus chain.
-  long bits = 600;
-  // Number of columns of Key-Switching matrix (typically 2 or 3).
-  long c = 2;
-  // Factorisation of m required for bootstrapping.
-  std::vector<long> mvec = {7, 5, 9, 13};
-  // Generating set of Zm* group.
-  std::vector<long> gens = {2341, 3277, 911};
-  // Orders of the previous generators.
-  std::vector<long> ords = {6, 4, 6};
+  // long p = 2;
+  // // Cyclotomic polynomial - defines phi(m).
+  // long m = 4095;
+  // // Hensel lifting (default = 1).
+  // long r = 1;
+  // // Number of bits of the modulus chain.
+  // long bits = 600;
+  // // Number of columns of Key-Switching matrix (typically 2 or 3).
+  // long c = 2;
+  // // Factorisation of m required for bootstrapping.
+  // std::vector<long> mvec = {7, 5, 9, 13};
+  // // Generating set of Zm* group.
+  // std::vector<long> gens = {2341, 3277, 911};
+  // // Orders of the previous generators.
+  // std::vector<long> ords = {6, 4, 6};
+ long p = 2;
+
+ long m = 1705;
+
+ long r = 1;
+ long bits = 600;
+ long c = 2;
+ std::vector<long> mvec = {11, 155};
+ std::vector<long> gens = { 156,  936};
+ std::vector<long> ords = {10,  6};
   std::cout << "Initialising context object..." << std::endl;
   // Initialize the context.
   
@@ -127,7 +138,7 @@ int main (void) {
     0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
     0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,
     0x2,0x2,0x3,0x3,0x4,0x4, 0x5,0x5,};
-  long message_1[16];
+  uint32_t message_1[16];
   for(int i = 0; i < 16; i++){
     memcpy(&message_1[i],&buf_1[ i*4 ],4);
   }
@@ -161,6 +172,7 @@ int main (void) {
     for (int k = 0 ;k < 16; k++)
       ea.encrypt(encryptedMessage_1[k][i], public_key, m_vec[k]);
   }
+  std::cout << "ciphertext capacity:" << encryptedMessage_1[0][0].bitCapacity() << std::endl;
   std::cout << "Second group encrypted " << std::endl;
 
   int sendMessageSize = 16 * 2;
@@ -175,7 +187,7 @@ int main (void) {
   // ciphertext1.close();
 
   int receivedMessageSize = sendMessageSize;
-  int round = 17;
+  int round = 63;
   std::vector<std::vector<helib::Ctxt>> receivedMessage;
   for( int i = 0; i < 16; i++){
     receivedMessage.push_back(encryptedMessage[i]);
@@ -202,16 +214,30 @@ int main (void) {
 
   hash.FHsha256_update(receivedMessage, receivedMessageSize, round);
 
-  // std::ifstream skfile;
-  // skfile.open("sk.json");
-  // helib::SecKey secret_key = helib::SecKey::readFromJSON(skfile,context);
-  // skfile.close();
-  // for(int i = 0;i < 8; i++){
-  //   std::vector<long> decrypted_result;
-  //   helib::CtPtrs_vectorCt result_wrapper(hash.state[i]);
-  //   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  //   std::cout << "hash " << i << " : "<<std::hex<< decrypted_result[0] << std::endl;
-  // }
+  std::ifstream skfile;
+  skfile.open("sk");
+  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  skfile.close();
+  std::cout << "Compute message hash using FHSHA256" << std::endl;
+  std::cout << "hash:";
+  for(int i = 0;i < 8; i++){
+    std::vector<long> decrypted_result;
+    helib::CtPtrs_vectorCt result_wrapper(hash.state[i]);
+    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    std::cout << std::hex<< decrypted_result[0];
+  }
+  
+  std::cout << std::endl;
+  char messageCheck[128];
+  memcpy(messageCheck, buf,64);
+  memcpy(messageCheck + 64, buf_1,64);
+  std::cout << "Compute message hash using SHA256" << std::endl;
+  
+  SHA256 sha;
+  sha.update(messageCheck);
+  uint8_t * digest = sha.digest();
+
+  std::cout << "hash:"<<SHA256::toString(digest) << std::endl;
 
 }
  
