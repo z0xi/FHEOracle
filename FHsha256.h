@@ -21,6 +21,8 @@ class FHSHA256{
     // helib::EncryptedArray ea;
 
     FHSHA256(const helib::PubKey& newPubKey);
+    void FHsha256_pad(std::vector<std::vector<helib::Ctxt> >&  output, std::vector<helib::Ctxt>  input, int elementSize);
+
     void FHsha256_H0_init();
     void FHsha256_update(std::vector<std::vector<helib::Ctxt> >  data, size_t elementSize, int round);
 
@@ -32,7 +34,10 @@ class FHSHA256{
     void FHsha256_sigma0(std::vector<helib::Ctxt>& sigma0, std::vector<std::vector<helib::Ctxt> > tempState);
     void FHsha256_sigma1(std::vector<helib::Ctxt>& sigma1, std::vector<std::vector<helib::Ctxt> > tempState);
     void FHsha256_transform(int r, int groupIndex);
-    // void FHsha256_final(FHsha256_t *p, unsigned char *digest);
+    void FHsha256_updateFinal(uint8_t *m_state, uint32_t *roundState, int round);
+    
+    void FHsha256_digest(uint8_t *hash, uint32_t finalState[8]);
+    std::string toString(const uint8_t * digest);
   
 };
 
