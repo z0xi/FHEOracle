@@ -14,6 +14,6 @@ set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
 set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
 
 
-add_executable(test test.cpp FHsha256.cpp SHA256.cpp)
+add_executable(test1 test1.cpp FHsha256.cpp SHA256.cpp holder.cpp)
 find_package(helib ${HELIB_VERSION} REQUIRED)
-target_link_libraries(test helib)
+target_link_libraries(test1 helib)

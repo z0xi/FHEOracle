@@ -8,101 +8,17 @@
 #include <helib/binaryArith.h>
 #include <helib/intraSlot.h>
 
-void keygen(){
- // Plaintext prime modulus.
-  // long p = 2;
-  // // Cyclotomic polynomial - defines phi(m).
-  // long m = 4095;
-  // // Hensel lifting (default = 1).
-  // long r = 1;
-  // // Number of bits of the modulus chain.
-  // long bits = 600;
-  // // Number of columns of Key-Switching matrix (typically 2 or 3).
-  // long c = 2;
-  // // Factorisation of m required for bootstrapping.
-  // std::vector<long> mvec = {7, 5, 9, 13};
-  // // Generating set of Zm* group.
-  // std::vector<long> gens = {2341, 3277, 911};
-  // // Orders of the previous generators.
-  // std::vector<long> ords = {6, 4, 6};
- long p = 2;
-
- long m = 1705;
-
- long r = 1;
- long bits = 600;
- long c = 2;
- std::vector<long> mvec = {11, 155};
- std::vector<long> gens = { 156,  936};
- std::vector<long> ords = {10,  6};
-  std::cout << "Initialising context object..." << std::endl;
-  // Initialize the context.
-  
-  // This object will hold information about the algebra created from the
-  // previously set parameters.
-  helib::Context context = helib::ContextBuilder<helib::BGV>()
-                               .m(m)
-                               .p(p)
-                               .r(r)
-                               .gens(gens)
-                               .ords(ords)
-                               .bits(bits)
-                               .c(c)
-                               .bootstrappable(true)
-                               .mvec(mvec)
-                               .build();
-                               
-  context.printout();
-  std::cout << std::endl;
-  // Print the security level.
-  std::cout << "Security: " << context.securityLevel() << std::endl;
-  std::cout << "Creating secret key..." << std::endl;
-  // Create a secret key associated with the context.
-  helib::SecKey secret_key(context);
-  // Generate the secret key.
-  secret_key.GenSecKey();
-  addSome1DMatrices(secret_key);
-  addFrbMatrices(secret_key);
-  // Generate bootstrapping data.
-  secret_key.genRecryptData();
-  // helib::addFrbMatrices(secret_key);
-  // helib::addSome1DMatrices(secret_key);
-  // Public key management.
-  // Set the secret key (upcast: SecKey is a subclass of PubKey).
-   helib::PubKey& public_key = secret_key;
-
-  // 以写模式打开文件
-  std::ofstream con;
-  con.open("context");
-  context.writeTo(con);
-  con.close();
-
-  // 以写模式打开文件
-  std::ofstream skfile;
-  skfile.open("sk");
-  secret_key.writeTo(skfile);
-  skfile.close();
-
-    // 以写模式打开文件
-  std::ofstream pkfile;
-  pkfile.open("pk");
-  public_key.writeTo(pkfile);
-  pkfile.close();
-}
-
 int main (void) {
 
   HOLDER holder;
   holder.keygen();
-  uint8_t buf[66] = {0x1,0x2,0x3,0x4,0x5,0x6, 0x7,0x8, 
+  uint8_t buf[56] = {0x1,0x2,0x3,0x4,0x5,0x6, 0x7,0x8, 
     0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
     0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8, 
     0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
     0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
     0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
-    0x2,0x2,0x3,0x3,0x4,0x4,0x4,0x4,0x1,0x1};
-  long bitSize = sizeof(buf) * 8;
+    0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8};
 
   std::ifstream con,pkfile;                              
   con.open("context");
@@ -112,9 +28,16 @@ int main (void) {
   helib::PubKey public_key = helib::PubKey::readFrom(pkfile,context);
   pkfile.close();
   helib::Ctxt scratch(public_key);
-  std::vector<helib::Ctxt> encrypted_M(bitSize, scratch);
-  holder.bgvEncryptBitWise(encrypted_M, public_key, buf, bitSize);
 
+  long elementSize;
+  uint8_t *mes = holder.messagePad(elementSize, sizeof(buf), buf);
+  std::vector<std::vector<helib::Ctxt>> encrypted_M(elementSize / 16 * 64, std::vector<helib::Ctxt>(32, scratch));;
+  for( int i = 0; i < elementSize / 16; i++){
+    uint32_t *wtMessage = new uint32_t[4*64];
+    holder.wtExpand(wtMessage, mes + i * 64);
+    holder.bgvEncryptElementWise(encrypted_M, public_key, wtMessage, i);
+    delete wtMessage;
+  }
   std::cout << "Encrypted finished" << std::endl;
   // int sendMessageSize = 16 * 3;
 
@@ -127,13 +50,9 @@ int main (void) {
   // ciphertext.close();
   // ciphertext1.close();
 
-
-  int receivedMessageBitSize = bitSize;
   int round = 63;
   std::vector<std::vector<helib::Ctxt>> padMessage;
   FHSHA256 hash(public_key);
-  hash.FHsha256_pad(padMessage, encrypted_M, receivedMessageBitSize);
-  int elementSize = padMessage.size();
   hash.FHsha256_H0_init();
   // hash.FHsha256_Wt_init(encrypted);
   // hash.FHsha256_Wt_create(16);
@@ -148,7 +67,7 @@ int main (void) {
   // hash.FHsha256_sigma0(sigma0);
   // hash.FHsha256_sigma1(sigma1);
   // hash.FHsha256_transform(0);
-  hash.FHsha256_update(padMessage, elementSize, round);
+  hash.FHsha256_updateFor64(encrypted_M, elementSize / 16 * 64, round);
 
   // uint32_t roundState[8];
   // uint32_t lastState[8];
@@ -195,12 +114,12 @@ int main (void) {
 
 
   std::cout << std::endl;
-  char messageCheck[128];
-  memcpy(messageCheck, buf,64);
+  // char messageCheck[128];
+  // memcpy(messageCheck, buf,64);
   std::cout << "Compute message hash using SHA256" << std::endl;
   
   SHA256 sha;
-  sha.update(messageCheck);
+  sha.update(reinterpret_cast<char*>(buf));
   uint8_t * digest = sha.digest();
 
   std::cout << "hash:"<<SHA256::toString(digest) << std::endl;

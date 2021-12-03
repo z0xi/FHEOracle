@@ -113,17 +113,17 @@ FHSHA256::FHsha256_pad(std::vector<std::vector<helib::Ctxt> >& output, std::vect
       element.clear();
     }
   }
-  // std::cout<<"message pad finished"<<std::endl;
-  // std::ifstream skfile;
-  // skfile.open("sk");
-  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
-  // skfile.close();
-  // for(int i = 0;i < 16; i++){
-  //   std::vector<long> decrypted_result;
-  //   helib::CtPtrs_vectorCt result_wrapper(output[i]);
-  //   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
-  //   std::cout << std::hex<< decrypted_result.back()<<std::endl;
-  // }
+  std::cout<<"message pad finished"<<std::endl;
+  std::ifstream skfile;
+  skfile.open("sk");
+  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  skfile.close();
+  for(int i = 0;i < 32; i++){
+    std::vector<long> decrypted_result;
+    helib::CtPtrs_vectorCt result_wrapper(output[i]);
+    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    std::cout << std::hex<< decrypted_result.back()<<std::endl;
+  }
 };
 
 
@@ -599,14 +599,209 @@ FHSHA256::FHsha256_transform(int round, int groupIndex){
     helib::decryptBinaryNums(state_result, state_wrapper, secret_key, ea);
     std::cout<<"Group "<< groupIndex << " hash :" <<std::hex<< state_result[0] << std::endl;
 
-    for(int j = 0; j < 32;j++){
-      for( int k = 0; k < 8; k++){
-        // std::cout << "Hash state " << k<< " bit "<< j<< " before thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
-        public_key.thinReCrypt(state[k][j]);
-        // std::cout << "Hash state " << k<< " bit "<< j<< " after thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
-      }
-    }
+    // for(int j = 0; j < 32;j++){
+    //   for( int k = 0; k < 8; k++){
+    //     // std::cout << "Hash state " << k<< " bit "<< j<< " before thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
+    //     public_key.thinReCrypt(state[k][j]);
+    //     // std::cout << "Hash state " << k<< " bit "<< j<< " after thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
+    //   }
+    // }
     std::cout << "Hash state Bootstrap finished"<<std::endl;
+  }
+};
+
+void 
+FHSHA256::FHsha256_transformNoWtCreated(int round, int groupIndex){
+  
+  helib::Ctxt scratch(public_key);
+  const helib::Context& context =  public_key.getContext();
+  std::ifstream skfile;
+  skfile.open("sk");
+  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  skfile.close();
+  const helib::EncryptedArray& ea = context.getEA();
+
+  std::vector<std::vector<helib::Ctxt> > tempState(state);
+  int roundNum = 63;
+  if(groupIndex == group)
+    roundNum = round;
+  for( int r = 0; r <= roundNum; r++){
+    std::vector<helib::Ctxt> Kt(32,scratch);
+    std::vector<helib::Ctxt> ch;
+    std::vector<helib::Ctxt> ma;
+    std::vector<helib::Ctxt> sigma0;
+    std::vector<helib::Ctxt> sigma1;
+    // std::vector<long> wt_result;
+    // helib::CtPtrs_vectorCt wt_wrapper(Wt_Encrypted[r]);
+    // helib::decryptBinaryNums(wt_result, wt_wrapper, secret_key, ea);
+    // std::cout << "W"<< r<<" = " <<std::hex<< wt_result[0] << std::endl;
+
+    FHsha256_Kt_Encrypted(Kt ,r);
+    FHsha256_Ch(ch, tempState);
+    FHsha256_Ma(ma, tempState);
+    FHsha256_sigma0(sigma0, tempState);
+    FHsha256_sigma1(sigma1, tempState);
+    std::cout<<"ch ma sigma1 sigma0"<<" generated\n";
+    std::vector<helib::Ctxt> temp;
+    std::vector<helib::Ctxt> temp1;
+    std::vector<helib::Ctxt> temp2;
+    std::vector<std::vector<helib::Ctxt>> summands = {ch,
+                                                    Kt,
+                                                    sigma1,
+                                                    Wt_Encrypted[r],
+                                                    tempState[7]};
+    helib::CtPtrMat_vectorCt oneSum(summands);
+    helib::CtPtrs_vectorCt oneSum_wrapper(temp);
+    helib::addManyNumbers(
+      oneSum_wrapper,
+      oneSum,
+      32,
+      &unpackSlotEncoding);
+
+    std::vector<std::vector<helib::Ctxt>> summandA = {temp,
+                                                    ma,
+                                                    sigma0
+                                                    };
+    helib::CtPtrMat_vectorCt twoSum(summandA);
+    helib::CtPtrs_vectorCt twoSum_wrapper(temp1);
+    helib::addManyNumbers(
+      twoSum_wrapper,
+      twoSum,
+      32,
+      &unpackSlotEncoding);
+
+    helib::CtPtrs_vectorCt threeSum_wrapper(temp2);
+    helib::addTwoNumbers(
+      threeSum_wrapper,
+      helib::CtPtrs_vectorCt(tempState[3]),
+      oneSum_wrapper,
+      32,
+      &unpackSlotEncoding);
+
+    tempState[7].assign(tempState[6].begin(), tempState[6].end());
+    tempState[6].assign(tempState[5].begin(), tempState[5].end());
+    tempState[5].assign(tempState[4].begin(), tempState[4].end());
+    tempState[4].assign(threeSum_wrapper.v.begin(), threeSum_wrapper.v.end());
+    tempState[3].assign(tempState[2].begin(), tempState[2].end());
+    tempState[2].assign(tempState[1].begin(), tempState[1].end());
+    tempState[1].assign(tempState[0].begin(), tempState[0].end());
+    tempState[0].assign(twoSum_wrapper.v.begin(), twoSum_wrapper.v.end());
+
+    std::cout<<"Round "<< r <<" A-H generated\n";
+
+    std::vector<long> decrypted_result;
+    helib::CtPtrs_vectorCt result_wrapper(tempState[0]);
+    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
+    for(int j = 0; j < 32;j++){
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[0][j].bitCapacity() <<std::endl;
+      public_key.thinReCrypt(tempState[0][j]);
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0 " << "bit "<< j<< " after thinRecrypt capacity:"<< tempState[0][j].bitCapacity() <<std::endl;
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "4 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[4][j].bitCapacity() <<std::endl;
+      public_key.thinReCrypt(tempState[4][j]);
+      // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "4 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[4][j].bitCapacity() <<std::endl;
+    }
+    std::cout << "A E Bootstrap finished"<<std::endl;
+  }
+
+  if(roundNum == 63){
+    std::vector<std::vector<helib::Ctxt> > tempState_1(state);
+    helib::CtPtrs_vectorCt state0_wrapper(state[0]);
+    helib::CtPtrs_vectorCt state1_wrapper(state[1]);
+    helib::CtPtrs_vectorCt state2_wrapper(state[2]);
+    helib::CtPtrs_vectorCt state3_wrapper(state[3]);
+    helib::CtPtrs_vectorCt state4_wrapper(state[4]);
+    helib::CtPtrs_vectorCt state5_wrapper(state[5]);
+    helib::CtPtrs_vectorCt state6_wrapper(state[6]);
+    helib::CtPtrs_vectorCt state7_wrapper(state[7]);
+    helib::addTwoNumbers(
+      state0_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[0]),
+      helib::CtPtrs_vectorCt(tempState[0]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state1_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[1]),
+      helib::CtPtrs_vectorCt(tempState[1]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state2_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[2]),
+      helib::CtPtrs_vectorCt(tempState[2]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state3_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[3]),
+      helib::CtPtrs_vectorCt(tempState[3]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state4_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[4]),
+      helib::CtPtrs_vectorCt(tempState[4]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state5_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[5]),
+      helib::CtPtrs_vectorCt(tempState[5]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state6_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[6]),
+      helib::CtPtrs_vectorCt(tempState[6]),
+      32,
+      &unpackSlotEncoding);
+    helib::addTwoNumbers(
+      state7_wrapper,
+      helib::CtPtrs_vectorCt(tempState_1[7]),
+      helib::CtPtrs_vectorCt(tempState[7]),
+      32,
+      &unpackSlotEncoding);
+
+    std::cout<<"Group "<< groupIndex << " hash generated\n";
+
+    std::vector<long> state_result;
+    helib::CtPtrs_vectorCt state_wrapper(state[0]);
+    helib::decryptBinaryNums(state_result, state_wrapper, secret_key, ea);
+    std::cout<<"Group "<< groupIndex << " hash :" <<std::hex<< state_result[0] << std::endl;
+
+    // for(int j = 0; j < 32;j++){
+    //   for( int k = 0; k < 8; k++){
+    //     // std::cout << "Hash state " << k<< " bit "<< j<< " before thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
+    //     public_key.thinReCrypt(state[k][j]);
+    //     // std::cout << "Hash state " << k<< " bit "<< j<< " after thinRecrypt capacity:"<< state[k][j].bitCapacity() <<std::endl;
+    //   }
+    // }
+    std::cout << "Hash state Bootstrap finished"<<std::endl;
+  }
+};
+
+void
+FHSHA256::FHsha256_updateFor64(std::vector<std::vector<helib::Ctxt> > data, size_t elementSize, int round){
+  long data_index = 0;
+  int count = 0;
+  group = elementSize / 64;
+  int groupIndex = 1;
+  // P.S. 1 elementSize = 32bits
+  while (elementSize > 0)
+  {
+    Wt_Encrypted.push_back(data[data_index]);
+    count++;
+    data_index++;
+    elementSize--;
+    if (count == 64)
+    {
+      count = 0;
+      // FHsha256_Wt_initFor64(buffer);
+      FHsha256_transformNoWtCreated(round, groupIndex);
+      groupIndex++;
+      Wt_Encrypted.clear();
+    }
   }
 };
 
@@ -634,6 +829,38 @@ FHSHA256::FHsha256_update(std::vector<std::vector<helib::Ctxt> > data, size_t el
     }
   }
 };
+
+void 
+FHSHA256::FHsha256_Wt_initFor64(std::vector<std::vector<helib::Ctxt> > data){
+  // Init 
+  Wt_Encrypted.clear();
+  // trans to Big ending
+  for(int i = 0; i < 64; i++){
+    Wt_Encrypted.push_back(data[i]);
+  }
+  // Wt_Encrypted.insert(Wt_Encrypted.begin(), temp.begin(), temp.end());
+  std::cout<<"W0 - W64"<<" init"<<" finished\n";
+    
+  //   helib::Ctxt scratch(public_key);
+  //   std::vector<std::vector<helib::Ctxt> >  encrypted(8 ,std::vector<helib::Ctxt>(32, scratch));
+  //   const helib::Context& context = public_key.getContext();
+
+  //   const helib::EncryptedArray& ea = context.getEA();
+  //   buildUnpackSlotEncoding(unpackSlotEncoding, ea);
+  // std::cout<<"message pad finished"<<std::endl;
+  // std::ifstream skfile;
+  // skfile.open("sk");
+  // helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  // skfile.close();
+  // for(int i = 0;i < 16; i++){
+  //   std::vector<long> decrypted_result;
+  //   helib::CtPtrs_vectorCt result_wrapper(Wt_Encrypted[i]);
+  //   helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+  //   std::cout << std::hex<< decrypted_result.back()<<std::endl;
+  // }
+}
+
+
 
 // void FHSHA256::FHsha256_updateFinal() {
 // 	uint32_t maj, xorA, ch, xorE, sum, newA, newE, m[64];

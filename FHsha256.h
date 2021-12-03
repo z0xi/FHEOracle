@@ -14,18 +14,14 @@ class FHSHA256{
 
     std::vector<std::vector<helib::Ctxt> > state;
     std::vector<std::vector<helib::Ctxt> > buffer;
-    // std::vector<std::vector<helib::Ctxt> > Kt_Encrypted;
     std::vector<std::vector<helib::Ctxt> > Wt_Encrypted;
     const helib::PubKey& public_key;
     int group;
-    // helib::EncryptedArray ea;
 
     FHSHA256(const helib::PubKey& newPubKey);
     void FHsha256_pad(std::vector<std::vector<helib::Ctxt> >&  output, std::vector<helib::Ctxt>  input, int elementSize);
-
     void FHsha256_H0_init();
     void FHsha256_update(std::vector<std::vector<helib::Ctxt> >  data, size_t elementSize, int round);
-
     void FHsha256_Wt_init(std::vector<std::vector<helib::Ctxt> > data);
     void FHsha256_Wt_create(int t);
     void FHsha256_Kt_Encrypted(std::vector<helib::Ctxt>& Kt, int t);
@@ -36,6 +32,11 @@ class FHSHA256{
     void FHsha256_transform(int r, int groupIndex);
     void FHsha256_updateFinal(uint8_t *m_state, uint32_t *roundState, int round);
     
+
+    void FHsha256_updateFor64(std::vector<std::vector<helib::Ctxt> >  data, size_t elementSize, int round);
+    void FHsha256_Wt_initFor64(std::vector<std::vector<helib::Ctxt> > data);
+    void FHsha256_transformNoWtCreated(int r, int groupIndex);
+
     void FHsha256_digest(uint8_t *hash, uint32_t finalState[8]);
     std::string toString(const uint8_t * digest);
   
