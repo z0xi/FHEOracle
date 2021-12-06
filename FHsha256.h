@@ -34,11 +34,12 @@ class FHSHA256{
     void FHsha256_transformFinal(uint32_t *finalState, uint32_t *finalRoundState, uint32_t *finalWt, int round);
     
 
-    void FHsha256_updateFor64(std::vector<std::vector<helib::Ctxt> >  data, size_t elementSize, int round);
+    void FHsha256_updateFor64(size_t elementSize, int round);
     void FHsha256_Wt_initFor64(std::vector<std::vector<helib::Ctxt> > data);
     void FHsha256_transformNoWtCreated(int r, int groupIndex);
   
   private:
+    void FHsha256_readCipher(int groupIndex, int elementIndex);
     uint32_t rotr(uint32_t x, uint32_t n);
     uint32_t choose(uint32_t e, uint32_t f, uint32_t g);
     uint32_t majority(uint32_t a, uint32_t b, uint32_t c);

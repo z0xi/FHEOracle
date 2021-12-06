@@ -1,0 +1,94 @@
+#include <iostream>
+#include <string.h>
+#include "FHsha256.h"
+#include "SHA256.h"
+#include <helib/helib.h>
+#include <helib/binaryArith.h>
+#include <helib/intraSlot.h>
+
+int main (void) {
+
+  std::ifstream con,pkfile;                              
+  con.open("context");
+  helib::Context context =  helib::Context::readFrom(con);
+  con.close();
+  pkfile.open("pk");
+  helib::PubKey public_key = helib::PubKey::readFrom(pkfile,context);
+  pkfile.close();
+
+  int round = 16;
+  int elementSize = 64 * 2;
+  std::vector<std::vector<helib::Ctxt>> padMessage;
+  FHSHA256 hash(public_key);
+  hash.FHsha256_H0_init();
+  // hash.FHsha256_Wt_init(encrypted);
+  // hash.FHsha256_Wt_create(16);
+  // hash.FHsha256_Wt_create(17);
+  // hash.FHsha256_Kt_Encrypted(0);
+  // std::vector<helib::Ctxt> ch;
+  // std::vector<helib::Ctxt> ma;
+  // std::vector<helib::Ctxt> sigma0;
+  // std::vector<helib::Ctxt> sigma1;
+  // hash.FHsha256_Ch(ch);
+  // hash.FHsha256_Ma(ma);
+  // hash.FHsha256_sigma0(sigma0);
+  // hash.FHsha256_sigma1(sigma1);
+  // hash.FHsha256_transform(0);
+  hash.FHsha256_updateFor64(elementSize, round);
+
+  uint32_t finalRoundState[8];
+  uint32_t lastState[8];
+  uint32_t *finalWt = new uint32_t[4*(63 - round)];
+
+  std::ifstream skfile;
+  skfile.open("sk");
+  const helib::EncryptedArray& ea = context.getEA();
+  helib::SecKey secret_key = helib::SecKey::readFrom(skfile,context);
+  skfile.close();
+  std::cout << "*****Compute message hash using FHSHA256*****" << std::endl;
+  std::cout << "Final group "<< round << " round A-H decrypt:" << std::endl;
+  for(int i = 0;i < 8; i++){
+    std::vector<long> decrypted_result;
+    helib::CtPtrs_vectorCt result_wrapper(hash.lastRoundState[i]);
+    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    memcpy(&finalRoundState[i], &decrypted_result[0], 32);
+    std::cout << std::hex<< decrypted_result[0];
+  }
+
+  std::cout << std::endl;
+  std::cout << "N - 1 group state A-H decrypt:" << std::endl;
+  for(int i = 0;i < 8; i++){
+    std::vector<long> decrypted_result;
+    helib::CtPtrs_vectorCt result_wrapper(hash.state[i]);
+    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    memcpy(&lastState[i], &decrypted_result[0], 32);
+    std::cout << std::hex<< decrypted_result[0];
+  }
+  
+  std::cout << std::endl;
+  std::cout << "last Wt decrypt:" << std::endl;
+  for(int i = round + 1, k = 0;i < 64; i++, k++){
+    std::vector<long> decrypted_result;
+    helib::CtPtrs_vectorCt result_wrapper(hash.Wt_Encrypted[i]);
+    helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
+    memcpy(&finalWt[k], &decrypted_result[0], 32);
+    std::cout << std::hex<< decrypted_result[0];
+  }
+  std::cout << std::endl;
+  std::cout << "Compute the rest of transform" << std::endl;
+  hash.FHsha256_transformFinal(lastState, finalRoundState, finalWt, round);
+  std::cout << "hash:";
+  for(int i = 0; i< 8; i++){
+	  std::cout << lastState[i];
+  }
+  std::cout << std::endl;
+  // std::cout << "*****Compute message hash using SHA256*****" << std::endl;
+  
+  // SHA256 sha;
+  // sha.update(reinterpret_cast<char*>(buf));
+  // uint8_t * digest = sha.digest();
+
+  // std::cout << "hash:"<<SHA256::toString(digest) << std::endl;
+
+}
+ 

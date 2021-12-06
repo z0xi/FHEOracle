@@ -6,6 +6,7 @@
 #include <helib/helib.h>
 #include <helib/binaryArith.h>
 #include <helib/intraSlot.h>
+#include <sstream>
 
 HOLDER::HOLDER(){    
 };
@@ -51,6 +52,7 @@ HOLDER::keygen(){
                                .ords(ords)
                                .bits(bits)
                                .c(c)
+                               .thickboot()//enable bootstrap
                                .bootstrappable(true)
                                .mvec(mvec)
                                .build();
@@ -191,11 +193,19 @@ HOLDER::bgvEncryptElementWise(std::vector<std::vector<helib::Ctxt>>& encrypted_M
 
     // Encrypt 4Bytes in each cycle.
     for( int j = 0; j < 64; j++){
+      std::vector<helib::Ctxt> tempCtxt;
         for (int i = 0; i < 32; ++i) {
             std::vector<long> m_vec(ea.size());
                 for (auto& slot : m_vec)
                     slot = (message[j] >> i) & 1;
             ea.encrypt(encrypted_M[elementIndex * 64 + j][i], public_key, m_vec);
+            char tmp[20];
+            std::sprintf(tmp,"./EM/C_%ld_%d_%d",elementIndex ,j ,i);
+            std::ofstream cipher;
+            std::stringstream s;
+            cipher.open(tmp);
+            encrypted_M[elementIndex * 64 + j][i].writeTo(cipher);
+            cipher.close();
         }
     }
 };
