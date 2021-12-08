@@ -14,31 +14,31 @@ HOLDER::HOLDER(){
 void 
 HOLDER::keygen(){
  // Plaintext prime modulus.
-  // long p = 2;
+   long p = 2;
   // // Cyclotomic polynomial - defines phi(m).
-  // long m = 4095;
+   long m = 4095;
   // // Hensel lifting (default = 1).
-  // long r = 1;
+   long r = 1;
   // // Number of bits of the modulus chain.
-  // long bits = 600;
+   long bits = 600;
   // // Number of columns of Key-Switching matrix (typically 2 or 3).
-  // long c = 2;
+   long c = 2;
   // // Factorisation of m required for bootstrapping.
-  // std::vector<long> mvec = {7, 5, 9, 13};
+   std::vector<long> mvec = {7, 5, 9, 13};
   // // Generating set of Zm* group.
-  // std::vector<long> gens = {2341, 3277, 911};
+   std::vector<long> gens = {2341, 3277, 911};
   // // Orders of the previous generators.
-  // std::vector<long> ords = {6, 4, 6};
- long p = 2;
+   std::vector<long> ords = {6, 4, 6};
+ //long p = 2;
 
- long m = 1705;
+ //long m = 1705;
 
- long r = 1;
- long bits = 600;
- long c = 2;
- std::vector<long> mvec = {11, 155};
- std::vector<long> gens = { 156,  936};
- std::vector<long> ords = {10,  6};
+ //long r = 1;
+ //long bits = 600;
+ //long c = 2;
+ //std::vector<long> mvec = {11, 155};
+ //std::vector<long> gens = { 156,  936};
+ //std::vector<long> ords = {10,  6};
   std::cout << "Initialising context object..." << std::endl;
   // Initialize the context.
   
@@ -52,7 +52,7 @@ HOLDER::keygen(){
                                .ords(ords)
                                .bits(bits)
                                .c(c)
-                               .thickboot()//enable bootstrap
+                               //.thickboot()//enable bootstrap
                                .bootstrappable(true)
                                .mvec(mvec)
                                .build();

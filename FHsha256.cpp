@@ -687,9 +687,9 @@ FHSHA256::FHsha256_transformNoWtCreated(int round, int groupIndex){
       32,
       &unpackSlotEncoding);
     std::cout << "A E generated"<<std::endl;
-    helib::packedRecrypt(threeSum_wrapper, unpackSlotEncoding, ea);
-    helib::packedRecrypt(twoSum_wrapper, unpackSlotEncoding, ea);
-    std::cout << "A E Bootstrap finished"<<std::endl;
+    //helib::packedRecrypt(threeSum_wrapper, unpackSlotEncoding, ea);
+    //helib::packedRecrypt(twoSum_wrapper, unpackSlotEncoding, ea);
+    //std::cout << "A E Bootstrap finished"<<std::endl;
     tempState[7].assign(tempState[6].begin(), tempState[6].end());
     tempState[6].assign(tempState[5].begin(), tempState[5].end());
     tempState[5].assign(tempState[4].begin(), tempState[4].end());
@@ -705,17 +705,18 @@ FHSHA256::FHsha256_transformNoWtCreated(int round, int groupIndex){
     helib::CtPtrs_vectorCt result_wrapper(tempState[0]);
     helib::decryptBinaryNums(decrypted_result, result_wrapper, secret_key, ea);
     std::cout << "Group "<< groupIndex << " Round " << std::dec <<r << " state "<< "0" << " : "<<std::hex<< decrypted_result[0] << std::endl;
-    // for(int j = 0; j < 32;j++){
+     for(int j = 0; j < 32;j++){
     //   // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[0][j].bitCapacity() <<std::endl;
-    //   public_key.thinReCrypt(tempState[0][j]);
+       public_key.thinReCrypt(tempState[0][j]);
     //   // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "0 " << "bit "<< j<< " after thinRecrypt capacity:"<< tempState[0][j].bitCapacity() <<std::endl;
     //   // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "4 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[4][j].bitCapacity() <<std::endl;
-    //   public_key.thinReCrypt(tempState[4][j]);
+       public_key.thinReCrypt(tempState[4][j]);
     //   // std::cout << "Group "<< groupIndex << " Round " << r << " state "<< "4 " << "bit "<< j<< " before thinRecrypt capacity:"<< tempState[4][j].bitCapacity() <<std::endl;
-    // }
+     }
+    std::cout << "A E Bootstrap finished"<<std::endl;
   }
 
-  if(roundNum == 63 ){
+  if(roundNum == 63 && groupIndex != group){
     std::vector<std::vector<helib::Ctxt> > tempState_1(state);
     helib::CtPtrs_vectorCt state0_wrapper(state[0]);
     helib::CtPtrs_vectorCt state1_wrapper(state[1]);
