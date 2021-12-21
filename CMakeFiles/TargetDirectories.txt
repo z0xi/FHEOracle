@@ -1,3 +1,0 @@
-/home/hei/Desktop/FHEOracle/CMakeFiles/rebuild_cache.dir
-/home/hei/Desktop/FHEOracle/CMakeFiles/edit_cache.dir
-/home/hei/Desktop/FHEOracle/CMakeFiles/test.dir

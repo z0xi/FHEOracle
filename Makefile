@@ -48,10 +48,10 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/hei/Desktop/FHEOracle
+CMAKE_SOURCE_DIR = /home/hei/Desktop/Oracle
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/hei/Desktop/FHEOracle
+CMAKE_BINARY_DIR = /home/hei/Desktop/Oracle
 
 #=============================================================================
 # Targets provided globally by CMake.
@@ -80,9 +80,9 @@ edit_cache/fast: edit_cache
 
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/hei/Desktop/FHEOracle/CMakeFiles /home/hei/Desktop/FHEOracle/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/hei/Desktop/Oracle/CMakeFiles /home/hei/Desktop/Oracle/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/hei/Desktop/FHEOracle/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/hei/Desktop/Oracle/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -111,17 +111,30 @@ depend:
 .PHONY : depend
 
 #=============================================================================
-# Target rules for targets named test
+# Target rules for targets named server
 
 # Build rule for target.
-test: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 test
-.PHONY : test
+server: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 server
+.PHONY : server
 
 # fast build rule for target.
-test/fast:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/build
-.PHONY : test/fast
+server/fast:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/build
+.PHONY : server/fast
+
+#=============================================================================
+# Target rules for targets named client
+
+# Build rule for target.
+client: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 client
+.PHONY : client
+
+# fast build rule for target.
+client/fast:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/build
+.PHONY : client/fast
 
 FHsha256.o: FHsha256.cpp.o
 
@@ -129,7 +142,7 @@ FHsha256.o: FHsha256.cpp.o
 
 # target to build an object file
 FHsha256.cpp.o:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/FHsha256.cpp.o
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/FHsha256.cpp.o
 .PHONY : FHsha256.cpp.o
 
 FHsha256.i: FHsha256.cpp.i
@@ -138,7 +151,7 @@ FHsha256.i: FHsha256.cpp.i
 
 # target to preprocess a source file
 FHsha256.cpp.i:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/FHsha256.cpp.i
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/FHsha256.cpp.i
 .PHONY : FHsha256.cpp.i
 
 FHsha256.s: FHsha256.cpp.s
@@ -147,35 +160,116 @@ FHsha256.s: FHsha256.cpp.s
 
 # target to generate assembly for a file
 FHsha256.cpp.s:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/FHsha256.cpp.s
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/FHsha256.cpp.s
 .PHONY : FHsha256.cpp.s
 
-test.o: test.cpp.o
+SHA256.o: SHA256.cpp.o
 
-.PHONY : test.o
+.PHONY : SHA256.o
 
 # target to build an object file
-test.cpp.o:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cpp.o
-.PHONY : test.cpp.o
+SHA256.cpp.o:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/SHA256.cpp.o
+.PHONY : SHA256.cpp.o
 
-test.i: test.cpp.i
+SHA256.i: SHA256.cpp.i
 
-.PHONY : test.i
+.PHONY : SHA256.i
 
 # target to preprocess a source file
-test.cpp.i:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cpp.i
-.PHONY : test.cpp.i
+SHA256.cpp.i:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/SHA256.cpp.i
+.PHONY : SHA256.cpp.i
 
-test.s: test.cpp.s
+SHA256.s: SHA256.cpp.s
 
-.PHONY : test.s
+.PHONY : SHA256.s
 
 # target to generate assembly for a file
-test.cpp.s:
-	$(MAKE) -f CMakeFiles/test.dir/build.make CMakeFiles/test.dir/test.cpp.s
-.PHONY : test.cpp.s
+SHA256.cpp.s:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/SHA256.cpp.s
+.PHONY : SHA256.cpp.s
+
+client.o: client.cpp.o
+
+.PHONY : client.o
+
+# target to build an object file
+client.cpp.o:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cpp.o
+.PHONY : client.cpp.o
+
+client.i: client.cpp.i
+
+.PHONY : client.i
+
+# target to preprocess a source file
+client.cpp.i:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cpp.i
+.PHONY : client.cpp.i
+
+client.s: client.cpp.s
+
+.PHONY : client.s
+
+# target to generate assembly for a file
+client.cpp.s:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/client.cpp.s
+.PHONY : client.cpp.s
+
+holder.o: holder.cpp.o
+
+.PHONY : holder.o
+
+# target to build an object file
+holder.cpp.o:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/holder.cpp.o
+.PHONY : holder.cpp.o
+
+holder.i: holder.cpp.i
+
+.PHONY : holder.i
+
+# target to preprocess a source file
+holder.cpp.i:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/holder.cpp.i
+.PHONY : holder.cpp.i
+
+holder.s: holder.cpp.s
+
+.PHONY : holder.s
+
+# target to generate assembly for a file
+holder.cpp.s:
+	$(MAKE) -f CMakeFiles/client.dir/build.make CMakeFiles/client.dir/holder.cpp.s
+.PHONY : holder.cpp.s
+
+server.o: server.cpp.o
+
+.PHONY : server.o
+
+# target to build an object file
+server.cpp.o:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cpp.o
+.PHONY : server.cpp.o
+
+server.i: server.cpp.i
+
+.PHONY : server.i
+
+# target to preprocess a source file
+server.cpp.i:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cpp.i
+.PHONY : server.cpp.i
+
+server.s: server.cpp.s
+
+.PHONY : server.s
+
+# target to generate assembly for a file
+server.cpp.s:
+	$(MAKE) -f CMakeFiles/server.dir/build.make CMakeFiles/server.dir/server.cpp.s
+.PHONY : server.cpp.s
 
 # Help Target
 help:
@@ -185,13 +279,23 @@ help:
 	@echo "... depend"
 	@echo "... rebuild_cache"
 	@echo "... edit_cache"
-	@echo "... test"
+	@echo "... server"
+	@echo "... client"
 	@echo "... FHsha256.o"
 	@echo "... FHsha256.i"
 	@echo "... FHsha256.s"
-	@echo "... test.o"
-	@echo "... test.i"
-	@echo "... test.s"
+	@echo "... SHA256.o"
+	@echo "... SHA256.i"
+	@echo "... SHA256.s"
+	@echo "... client.o"
+	@echo "... client.i"
+	@echo "... client.s"
+	@echo "... holder.o"
+	@echo "... holder.i"
+	@echo "... holder.s"
+	@echo "... server.o"
+	@echo "... server.i"
+	@echo "... server.s"
 .PHONY : help
 
 

@@ -1,7 +1,9 @@
 #include <iostream>
 #include <string.h>
+#include "SHA256.h"
 #include "holder.h"
-#include <helib/helib.h>
+#include <tfhe/tfhe.h>
+#include <tfhe/tfhe_io.h>
 
 int main (void) {
 
@@ -23,23 +25,27 @@ int main (void) {
     // 0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
     // 0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8,
     // 0x1,0x2,0x3,0x4,0x5,0x6,0x7,0x8};
+  std::cout << "*****Compute message hash using SHA256*****" << std::endl;
+  
+  // SHA256 sha;
+  // sha.update(reinterpret_cast<char*>(buf));
+  // uint8_t * digest = sha.digest();
 
-  std::ifstream con,pkfile;                              
-  con.open("context");
-  helib::Context context =  helib::Context::readFrom(con);
-  con.close();
-  pkfile.open("pk");
-  helib::PubKey public_key = helib::PubKey::readFrom(pkfile,context);
-  pkfile.close();
-  helib::Ctxt scratch(public_key);
+  // std::cout << "hash:"<<SHA256::toString(digest) << std::endl;
+
+  FILE* secret_key = fopen("secret.key","rb");
+  TFheGateBootstrappingSecretKeySet* key = new_tfheGateBootstrappingSecretKeySet_fromFile(secret_key);
+  fclose(secret_key);
+
+  //if necessary, the params are inside the key
+  const TFheGateBootstrappingParameterSet* params = key->params;
 
   long elementSize;
   uint8_t *mes = holder.messagePad(elementSize, sizeof(buf), buf);
-  std::vector<std::vector<helib::Ctxt>> encrypted_M(elementSize / 16 * 64, std::vector<helib::Ctxt>(32, scratch));;
   for( int i = 0; i < elementSize / 16; i++){
     uint32_t *wtMessage = new uint32_t[4*64];
     holder.wtExpand(wtMessage, mes + i * 64);
-    holder.bgvEncryptElementWise(encrypted_M, public_key, wtMessage, i);
+    holder.bgvEncryptElementWise(key, params, wtMessage, i);
     delete wtMessage;
   }
   std::cout << "Encrypted finished" << std::endl;
