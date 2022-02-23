@@ -1,5 +1,5 @@
 ### README
-
+In this folder：
 `git clone https://github.com/encryptogroup/ABY.git`
 
 `cd ABY/`
@@ -12,12 +12,8 @@
 
 `cd ../../`
 
-`cp ABY FHEoracle/`
-
-`cd FHEoracle`
-
 `make`
 
 ./client_test -r 0
 
-./server_test -r1
+./server_test -r 1
