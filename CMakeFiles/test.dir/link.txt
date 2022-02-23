@@ -1,1 +1,0 @@
-/usr/bin/c++   -O0 -Wall -g2 -ggdb   CMakeFiles/test.dir/test.cpp.o CMakeFiles/test.dir/FHsha256.cpp.o  -o test  -Wl,-rpath,/usr/local/lib /usr/local/lib/libhelib.a /usr/local/lib/libntl.a /usr/local/lib/libgmp.so -lpthread 
