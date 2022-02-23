@@ -1,3 +1,18 @@
+cmake_minimum_required(VERSION 3.12)
+project(ABY LANGUAGES CXX)
+find_package(ABY QUIET)
+find_package(ENCRYPTO_utils QUIET)
+if(ABY_FOUND)
+    message(STATUS "Found ABY")
+elseif (NOT ABY_FOUND AND NOT TARGET ABY::aby)
+    message("ABY was not found: add ABY subdirectory")
+    add_subdirectory(ABY)
+endif()
 
 add_executable(sha1_test sha1_test.cpp common/sha1_circuit.cpp)
+add_executable(client_test client.cpp client_folder/client_step2.cpp)
+add_executable(server_test server.cpp server_folder/sha1_circuit.cpp)
+
 target_link_libraries(sha1_test ABY::aby ENCRYPTO_utils::encrypto_utils)
+target_link_libraries(client_test ABY::aby ENCRYPTO_utils::encrypto_utils)
+target_link_libraries(server_test ABY::aby ENCRYPTO_utils::encrypto_utils)
