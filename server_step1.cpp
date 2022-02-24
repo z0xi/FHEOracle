@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream> 
+#include <fstream>
 #include <sstream>
 #include <tfhe/tfhe.h>
 #include <tfhe/tfhe_io.h>
@@ -168,12 +169,31 @@ void multiply(LweSample* product, LweSample* a, LweSample* b, const int nb_bits,
     }
 }
 
+
+void save_maping_graph(std::vector<int> g_maping_graph, char *path, int length)
+{
+	std::ofstream fp(path, std::ios::trunc);//只写文件 + trunc若文件存在则删除后重建
+	//std::fstream fp(path, std::ios::out | std::ios::trunc);//只写文件 + trunc若文件存在则删除后新建
+ 
+	if (!fp.is_open())
+	{
+		printf("can't open file\n");
+		return;
+	}
+	for (int i = 0; i < length; i++)
+	{
+		fp << g_maping_graph[i];
+		fp << " ";
+	}
+	fp.close();
+}
+
 int main(){  
-    FILE* secret_key = fopen("secret.key","rb");
+    FILE* secret_key = fopen("client_folder/secret.key","rb");
     TFheGateBootstrappingSecretKeySet* key = new_tfheGateBootstrappingSecretKeySet_fromFile(secret_key);
     fclose(secret_key);
     //reads the cloud key from file
-    FILE* cloud_key = fopen("cloud.key","rb");
+    FILE* cloud_key = fopen("client_folder/cloud.key","rb");
     TFheGateBootstrappingCloudKeySet* bk = new_tfheGateBootstrappingCloudKeySet_fromFile(cloud_key);
     fclose(cloud_key);
 
@@ -184,9 +204,9 @@ int main(){
     // exec_cmd(cmd, fileNum);
     // std::cout << atoi(fileNum.c_str()) << std::endl;
     // int fileNUM = atoi(fileNum.c_str());
-    int fileNUM = 56;
+    int fileNUM = 64;
     std::vector<LweSample*> cipherArray;
-    FILE* cloud_data = fopen("cloud_data","rb");
+    FILE* cloud_data = fopen("client_folder/cloud_data","rb");
     for(int i =0; i < fileNUM; i++){
       LweSample* ciphertext = new_gate_bootstrapping_ciphertext_array(8, params);
         for (int j=0; j<8; j++) 
@@ -212,7 +232,7 @@ int main(){
       for(int j =0; j < 16; j++)
         bootsCONSTANT(&constant[j], (randMulList[i]>>j)&1, bk);
       LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, params);
-      // std::cout << randMulList[i]<<std::endl;
+      printf("%d ",randMulList[i]);
       multiply(temp, cipherArray[i], constant, 8, bk);
       tempMul.push_back(temp);
     }
@@ -223,30 +243,33 @@ int main(){
       for(int j =0; j < 16; j++)
         bootsCONSTANT(&constant[j], (randAddList[i]>>j)&1, bk);
       LweSample* temp= new_gate_bootstrapping_ciphertext_array(16, params);
-      // std::cout << randAddList[i]<<std::endl;
+      printf("%d ",randAddList[i]);
       Adder(temp, tempMul[i], constant, 16, bk);
       tempAdd.push_back(temp);
     }
     std::cout<< "pause"<<std::endl;
-    FILE* confused_data = fopen("confused_data","wb");
+    FILE* confused_data = fopen("server_folder/confused_data","wb");
     for(int i = 0;i < tempAdd.size(); i++){
         for (int j=0; j<16; j++) 
             export_gate_bootstrapping_ciphertext_toFile(confused_data, &tempAdd[i][j], params);
     }
     fclose(confused_data);
 
-    LweSample* remainder = new_gate_bootstrapping_ciphertext_array(20, params);
+	save_maping_graph(randAddList, "server_folder/client_X_randAddList", fileNUM);
+	save_maping_graph(randMulList, "server_folder/client_X_randMulList", fileNUM);
+
+    LweSample* remainder = new_gate_bootstrapping_ciphertext_array(16, params);
     //export the 32 ciphertexts to a file (for the cloud)
-    FILE* answer_data = fopen("confused_data","rb");
+    FILE* answer_data = fopen("server_folder/confused_data","rb");
     for(int j = 0;j < fileNUM;j++){
         for (int i=0; i<16; i++) 
-        import_gate_bootstrapping_ciphertext_fromFile(answer_data, &remainder[i], params);
+          import_gate_bootstrapping_ciphertext_fromFile(answer_data, &remainder[i], params);
         int answer = 0;
         for (int i=0; i<16; i++) {
           int ai = bootsSymDecrypt(&remainder[i], key)>0;
           answer |= (ai<<i);
         }
-        std::cout<<answer<<std::endl;
+        std::cout<<answer<<" ";
     }
     fclose(answer_data);
     return 0;  

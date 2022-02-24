@@ -15,20 +15,43 @@
             along with this program. If not, see <http://www.gnu.org/licenses/>.
  \brief		Implementation of the SHA1 hash function (which should not be used in practice anymore!)
  */
-#include "sha1_circuit.h"
-#include "../../../abycore/circuit/booleancircuits.h"
-#include "../../../abycore/sharing/sharing.h"
+#include "server_step2_circuit.h"
+#include "abycore/circuit/booleancircuits.h"
+#include "abycore/sharing/sharing.h"
 #include <ENCRYPTO_utils/cbitvector.h>
 #include <ENCRYPTO_utils/crypto/crypto.h>
 #include <cstring>
+#include <fstream>
 
-int32_t test_div_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing) {
+void get_maping_graph(uint8_t *g_maping_graph, char *path, int length)
+{
+	//std::ifstream fp(path);//只读文件 ，也可由下一句替代
+	std::fstream fp(path, std::ios::in);//只读文件
+	int temp;
+	if (!fp.is_open())
+	{
+		printf("could not load file: %s\n", path);
+		return;
+	}
+ 
+	for (int i = 0; i < length; i++)
+	{
+		fp >> temp;
+		g_maping_graph[i]= temp;
+	}
+	printf("get maping_graph done .\n ");
+	fp.close();
+}
+
+int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing) {
 	uint32_t bitlen_8 = 8;
 	uint32_t bitlen_16 = 16;
 	uint32_t zero = 0;
+	uint32_t one = 1;
 	uint32_t divbits_per_party = 8;
+	uint32_t fileNUM = 64;
 	uint32_t divbytes_per_party = bits_in_bytes(divbits_per_party);
-	ABYParty* party = new ABYParty(role, address, port, seclvl, bitlen_8, nthreads, mt_alg);
+	ABYParty* party = new ABYParty(role, address, port, seclvl, bitlen_16, nthreads, mt_alg);
 	std::vector<Sharing*>& sharings = party->GetSharings();
 
 	// uint8_t* output;
@@ -37,38 +60,67 @@ int32_t test_div_circuit(e_role role, const std::string& address, uint16_t port,
 	BooleanCircuit* circ = (BooleanCircuit*) temp_circ;
 	//Circuit build routine works for Boolean circuits only right now
 	assert(circ->GetCircuitType() == C_BOOLEAN);
-	uint32_t aa[6] = {10,10,10,10,10,10};
-	uint32_t bb[6] = {1,1,1,1,1,1};
-	uint32_t cc[6] = {101,201,301,401,501,601};
-	std::vector<share*> msgV;
-	for(int i = 0;i < 6;i++){
-		share *s_div_out, *s_msg, *s_divRand, *s_subRand;
-		s_msg = circ->PutINGate(cc[i], bitlen_16, CLIENT);
-		s_subRand = circ->PutINGate(bb[i], bitlen_8, SERVER);
-		s_divRand = circ->PutINGate(aa[i], bitlen_8, SERVER);
 
-		share* s_quotient = inverseRandom(s_msg, s_divRand, s_subRand, nvals, circ);
-		s_div_out = circ->PutOUTGate(s_quotient, ALL);
-		msgV.push_back(s_div_out);
-		circ->PutPrintValueGate(s_quotient , "s_quotient");
+	// std::vector<int> addList(fileNUM);
+	// std::vector<int> mulList(fileNUM);
+	uint8_t addList[fileNUM];
+	uint8_t mulList[fileNUM];
+	get_maping_graph(addList, "server_folder/client_X_randAddList", fileNUM);
+	get_maping_graph(mulList, "server_folder/client_X_randMulList", fileNUM);
+	// uint32_t aa[6] = {10,10,10,10,10,10};
+	// uint32_t bb[6] = {1,1,1,1,1,1};
+	// uint32_t cc[6] = {101,201,301,401,501,601};
+	
+	// CBitVector addBitVector;
+	// CBitVector mulBitVector;
+	// addBitVector.Create(bitlen_8*fileNUM);
+	// mulBitVector.Create(bitlen_8*fileNUM);
+	// for(uint32_t i = 0; i < fileNUM; i++) {
+	// 	addBitVector.SetByte(i, addList[i]);
+	// 	mulBitVector.SetByte(i, mulList[i]);
+	// }
+	for(uint32_t i = 0; i < fileNUM; i++) {
+		printf("%d ",mulList[i]);
 	}
+	std::cout<<"pause"<<std::endl;
+		for(uint32_t i = 0; i < fileNUM; i++) {
+		printf("%d ",addList[i]);
+	}
+	std::cout<<"pause"<<std::endl;
+	share *s_div_out, *s_msg, *s_divRand, *s_subRand;
+	s_subRand = circ->PutSIMDINGate(nvals, addList, bitlen_8*fileNUM, SERVER);
+	s_divRand = circ->PutSIMDINGate(nvals, mulList, bitlen_8*fileNUM, SERVER);
+	s_msg = circ->PutDummyINGate(bitlen_16*fileNUM);
+	share* s_quotient = BuildInverseRandomCircuit(s_msg, s_divRand, s_subRand, fileNUM, nvals, circ);
+	// share* s_sub_temp = circ->PutCONSGate(one, bitlen_8*fileNUM);
+	// s_quotient = circ->PutSUBGate(s_quotient, s_sub_temp);
+	s_div_out = circ->PutOUTGate(s_quotient, SERVER); 
+	
+	// std::vector<share*> msgV;
+	// for(int i = 0;i < 6;i++){
+	// 	share *s_div_out, *s_msg, *s_divRand, *s_subRand;
+	// 	s_msg = circ->PutINGate(cc[i], bitlen_16, CLIENT);
+	// 	s_msg = new boolshare(16, circ);
+
+	// 	s_subRand = circ->PutINGate(addList[i], bitlen_8, SERVER);
+	// 	s_divRand = circ->PutINGate(mulList[i], bitlen_8, SERVER);
+
+	// 	share* s_quotient = BuildInverseRandomCircuit(s_msg, s_divRand, s_subRand, nvals, circ);
+	// 	s_div_out = circ->PutOUTGate(s_quotient, ALL);
+	// 	msgV.push_back(s_div_out);
+	// 	circ->PutPrintValueGate(s_quotient , "s_quotient");
+	// }
 	party->ExecCircuit();
-	out.Create(6*8);
-	for(int i = 0;i < 6;i++){
-		uint8_t* output = msgV[i]->get_clear_value_ptr();
-		// out.AttachBuf(output, (uint64_t) 8 * nvals);
-		out.SetBytes(output, i, 1);
-	}
+	out.AttachBuf(s_div_out->get_clear_value_ptr(), (uint64_t) bitlen_8*fileNUM * nvals);
+	// out.Create(6*8);
+	// for(int i = 0;i < 6;i++){
+	// 	uint8_t* output = msgV[i]->get_clear_value_ptr();/
+	// 	out.SetBytes(output, i, 1);
+	// }
 
-	for (uint32_t i = 0; i < nvals; i++) {
-// #ifndef BATCH
-		// std::cout << "(" << i << ") Server Input:\t";
-		// msgS.PrintHex(i * sha1bytes_per_party, (i + 1) * sha1bytes_per_party);
-		// std::cout << "(" << i << ") Client Input:\t";
-		// msgC.PrintHex(i * sha1bytes_per_party, (i + 1) * sha1bytes_per_party);
+	for (uint32_t i = 0; i < fileNUM /8; i++) {
 		std::cout << "(" << i << ") Circ:\t";
 		out.PrintHex(i * 8, (i + 1) * 8);
-// #endif
 	}
 	delete party;
 
@@ -160,7 +212,40 @@ int32_t test_sha1_circuit(e_role role, const std::string& address, uint16_t port
 	return 0;
 }
 
-share* inverseRandom(share* msg, share* divRand, share* subRand, uint32_t nvals, BooleanCircuit* circ){
+share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t fileNUM, uint32_t nvals, BooleanCircuit* circ){
+	uint32_t zero = 0;
+	uint32_t one = 0;
+	uint32_t bitlen_8 = 8;
+	share* out = new boolshare(bitlen_8 * fileNUM, circ);
+	int subIndex = 0;
+	int msgIndex = 0;
+	int divIndex = 0;
+	int outIndex = 0;
+	for(int i =0; i < fileNUM; i++){
+		share* s_zero= circ->PutCONSGate(zero, 16);
+		share* s_one= circ->PutCONSGate(one, 16);
+		share* s_sub_temp = circ->PutCONSGate(zero, 16);
+		share* s_div_temp = circ->PutCONSGate(zero, 16);
+		share* s_msg_temp = circ->PutCONSGate(zero, 16);
+		for(uint32_t j = 0; j < 8; j++) {
+			s_sub_temp->set_wire_id(j, subRand->get_wire_id(subIndex++));
+			s_div_temp->set_wire_id(j, divRand->get_wire_id(divIndex++));
+		}
+		for(uint32_t j = 0; j < 16; j++) {
+			s_msg_temp->set_wire_id(j, msg->get_wire_id(msgIndex++));
+		}
+		circ->PutPrintValueGate(s_msg_temp, "sub_before");
+		s_msg_temp = circ->PutSUBGate(s_msg_temp, s_sub_temp);
+		circ->PutPrintValueGate(s_msg_temp, "sub_after");
+		share* s_quotient = BuildDivCircuit(s_msg_temp, s_div_temp, nvals, circ);
+		for(uint32_t j = 0; j < 8; j++) {
+			out->set_wire_id(outIndex++, s_quotient->get_wire_id(j));
+		}
+	}
+	return out;
+};
+
+share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t nvals, BooleanCircuit* circ){
 	uint32_t zero = 0;
 	uint32_t one = 0;
 	share* s_zero= circ->PutCONSGate(zero, 16);

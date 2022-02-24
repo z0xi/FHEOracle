@@ -1,26 +1,8 @@
-/**
- \file 		aescircuit.h
- \author 	michael.zohner@ec-spride.de
- \copyright	ABY - A Framework for Efficient Mixed-protocol Secure Two-party Computation
-			Copyright (C) 2019 Engineering Cryptographic Protocols Group, TU Darmstadt
-			This program is free software: you can redistribute it and/or modify
-            it under the terms of the GNU Lesser General Public License as published
-            by the Free Software Foundation, either version 3 of the License, or
-            (at your option) any later version.
-            ABY is distributed in the hope that it will be useful,
-            but WITHOUT ANY WARRANTY; without even the implied warranty of
-            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-            GNU Lesser General Public License for more details.
-            You should have received a copy of the GNU Lesser General Public License
-            along with this program. If not, see <http://www.gnu.org/licenses/>.
- \brief		Implementation of the SHA1 hash function (which should not be used in practice anymore!)
- */
-
 #ifndef __SHA1_CIRCUIT_H_
 #define __SHA1_CIRCUIT_H_
 
-#include "../../../abycore/circuit/circuit.h"
-#include "../../../abycore/aby/abyparty.h"
+#include "abycore/circuit/circuit.h"
+#include "abycore/aby/abyparty.h"
 #include <ENCRYPTO_utils/crypto/crypto.h>
 #include <cassert>
 
@@ -48,10 +30,12 @@ const uint32_t ABY_SHA1_K2 = 0x8F1BBCDC;
 const uint32_t ABY_SHA1_K3 = 0xCA62C1D6;
 
 int32_t test_sha1_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing);
-int32_t test_div_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing);
+int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing);
 
 share* BuildDivCircuit(share* dividend, share* divisor, uint32_t nvals, BooleanCircuit* circ);
-share* inverseRandom(share* msg, share* divRand, share* subRand, uint32_t nvals, BooleanCircuit* circ);
+share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t nvals, BooleanCircuit* circ);
+share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t fileNUM, uint32_t nvals, BooleanCircuit* circ);
+
 
 share* BuildSHA1Circuit(share* s_msgS, share* s_msgC, uint8_t* msgS, uint8_t* msgC, uint8_t* int_out, uint32_t nvals, BooleanCircuit* circ);
 share* process_block(share* s_msg, uint8_t* msg, uint8_t* tmp_int_out, share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ);

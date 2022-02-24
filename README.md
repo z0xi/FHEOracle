@@ -1,19 +1,10 @@
 ### README
-In this folder：
-`git clone https://github.com/encryptogroup/ABY.git`
+Dependency:ABY TFHE
 
-`cd ABY/`
+./client_step1
 
-`mkdir build && cd build`
+./server_step1
 
-`cmake ..`
+./client_step2 -r 1
 
-`make`
-
-`cd ../../`
-
-`make`
-
-./client_test -r 0
-
-./server_test -r 1
+./server_step2 -r 0

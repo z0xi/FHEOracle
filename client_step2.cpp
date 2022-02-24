@@ -1,28 +1,12 @@
-/**
- \file 		aes_test.cpp
- \author 	michael.zohner@ec-spride.de
- \copyright	ABY - A Framework for Efficient Mixed-protocol Secure Two-party Computation
-			Copyright (C) 2019 Engineering Cryptographic Protocols Group, TU Darmstadt
-			This program is free software: you can redistribute it and/or modify
-            it under the terms of the GNU Lesser General Public License as published
-            by the Free Software Foundation, either version 3 of the License, or
-            (at your option) any later version.
-            ABY is distributed in the hope that it will be useful,
-            but WITHOUT ANY WARRANTY; without even the implied warranty of
-            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-            GNU Lesser General Public License for more details.
-            You should have received a copy of the GNU Lesser General Public License
-            along with this program. If not, see <http://www.gnu.org/licenses/>.
- \brief		AES Test class implementation.
- */
-
-//Utility libs
 #include <ENCRYPTO_utils/crypto/crypto.h>
 #include <ENCRYPTO_utils/parse_options.h>
-//ABY Party class
+#include <ENCRYPTO_utils/cbitvector.h>
 #include "abycore/aby/abyparty.h"
-
-#include "client_folder/client_step2.h"
+#include "abycore/circuit/circuit.h"
+#include "abycore/circuit/booleancircuits.h"
+#include "abycore/sharing/sharing.h"
+#include <cstring>
+#include "client_folder/client_step2_circuit.h"
 
 int32_t read_test_options(int32_t* argcp, char*** argvp, e_role* role, uint32_t* bitlen, uint32_t* nvals,
 		uint32_t* secparam, std::string* address, uint16_t* port, e_sharing* sharing) {
@@ -30,7 +14,7 @@ int32_t read_test_options(int32_t* argcp, char*** argvp, e_role* role, uint32_t*
 	uint32_t int_role = 0, int_port = 0, int_sharing = 0;
 	bool useffc = false;
 
-	parsing_ctx options[] = { { (void*) &int_role, T_NUM, "r", "Role: 0/1", false, false }, { (void*) nvals, T_NUM, "n", "Number of parallel operation elements", false, false }, {
+	parsing_ctx options[] = { { (void*) &int_role, T_NUM, "r", "Role: 0/1", true, false }, { (void*) nvals, T_NUM, "n", "Number of parallel operation elements", false, false }, {
 			(void*) bitlen, T_NUM, "b", "Bit-length, default 32", false, false }, { (void*) secparam, T_NUM, "s", "Symmetric Security Bits, default: 128", false, false }, {
 			(void*) address, T_STR, "a", "IP-address, default: localhost", false, false }, { (void*) &int_port, T_NUM, "p", "Port, default: 7766", false, false }, {
 			(void*) &int_sharing, T_NUM, "g", "Sharing in which the SHA1 circuit should be evaluated [0: BOOL, 1: YAO], default: BOOL", false, false } };
@@ -71,8 +55,7 @@ int main(int argc, char** argv) {
 
 	seclvl seclvl = get_sec_lvl(secparam);
 
-	// test_sha1_circuit(role, address, port, seclvl, nvals, nthreads, mt_alg, sharing);
-	test_div_circuit(role, address, port, seclvl, nvals, nthreads, mt_alg, sharing);
+	test_protocol_circuit(role, address, port, seclvl, nvals, nthreads, mt_alg, sharing);
 	return 0;
 }
 
