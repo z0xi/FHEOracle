@@ -29,7 +29,6 @@ const uint32_t ABY_SHA1_K1 = 0x6ED9EBA1;
 const uint32_t ABY_SHA1_K2 = 0x8F1BBCDC;
 const uint32_t ABY_SHA1_K3 = 0xCA62C1D6;
 
-int32_t test_sha1_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing);
 int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing);
 
 share* BuildDivCircuit(share* dividend, share* divisor, uint32_t nvals, BooleanCircuit* circ);
@@ -37,7 +36,7 @@ share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uin
 share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t fileNUM, uint32_t nvals, BooleanCircuit* circ);
 
 
-share* BuildSHA1Circuit(share* s_msgS, share* s_msgC, uint8_t* msgS, uint8_t* msgC, uint8_t* int_out, uint32_t nvals, BooleanCircuit* circ);
+share* BuildSHA1Circuit(share* s_msgS, uint8_t* msg, uint8_t* plain_out, uint32_t nvals, BooleanCircuit* circ);
 share* process_block(share* s_msg, uint8_t* msg, uint8_t* tmp_int_out, share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ);
 
 
@@ -45,8 +44,7 @@ void init_variables(share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* ci
 void break_message_to_chunks(share** s_w, share* s_msg, uint32_t* w, uint8_t* msg, BooleanCircuit* circ);
 void expand_ws(share** s_w, uint32_t* w, BooleanCircuit* circ);
 void sha1_main_loop(share** s_h, share** s_w, uint32_t* h, uint32_t* w, uint32_t nvals, BooleanCircuit* circ);
-void verify_SHA1_hash(uint8_t* msgS, uint8_t* msgC, uint32_t msgbytes_per_party, uint32_t nvals, uint8_t* hash);
-
+void verify_SHA1_hash(uint8_t* msg, uint32_t msgbytes, uint32_t nvals, uint8_t* hash);
 
 
 #endif /* __SHA1_CIRCUIT_H_ */

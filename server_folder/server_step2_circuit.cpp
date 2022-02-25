@@ -1,20 +1,3 @@
-/**
- \file 		sha1_circuit.cpp
- \author 	michael.zohner@ec-spride.de
- \copyright	ABY - A Framework for Efficient Mixed-protocol Secure Two-party Computation
-			Copyright (C) 2019 Engineering Cryptographic Protocols Group, TU Darmstadt
-			This program is free software: you can redistribute it and/or modify
-            it under the terms of the GNU Lesser General Public License as published
-            by the Free Software Foundation, either version 3 of the License, or
-            (at your option) any later version.
-            ABY is distributed in the hope that it will be useful,
-            but WITHOUT ANY WARRANTY; without even the implied warranty of
-            MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-            GNU Lesser General Public License for more details.
-            You should have received a copy of the GNU Lesser General Public License
-            along with this program. If not, see <http://www.gnu.org/licenses/>.
- \brief		Implementation of the SHA1 hash function (which should not be used in practice anymore!)
- */
 #include "server_step2_circuit.h"
 #include "abycore/circuit/booleancircuits.h"
 #include "abycore/sharing/sharing.h"
@@ -61,24 +44,11 @@ int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t 
 	//Circuit build routine works for Boolean circuits only right now
 	assert(circ->GetCircuitType() == C_BOOLEAN);
 
-	// std::vector<int> addList(fileNUM);
-	// std::vector<int> mulList(fileNUM);
 	uint8_t addList[fileNUM];
 	uint8_t mulList[fileNUM];
 	get_maping_graph(addList, "server_folder/client_X_randAddList", fileNUM);
 	get_maping_graph(mulList, "server_folder/client_X_randMulList", fileNUM);
-	// uint32_t aa[6] = {10,10,10,10,10,10};
-	// uint32_t bb[6] = {1,1,1,1,1,1};
-	// uint32_t cc[6] = {101,201,301,401,501,601};
-	
-	// CBitVector addBitVector;
-	// CBitVector mulBitVector;
-	// addBitVector.Create(bitlen_8*fileNUM);
-	// mulBitVector.Create(bitlen_8*fileNUM);
-	// for(uint32_t i = 0; i < fileNUM; i++) {
-	// 	addBitVector.SetByte(i, addList[i]);
-	// 	mulBitVector.SetByte(i, mulList[i]);
-	// }
+
 	for(uint32_t i = 0; i < fileNUM; i++) {
 		printf("%d ",mulList[i]);
 	}
@@ -92,125 +62,48 @@ int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t 
 	s_divRand = circ->PutSIMDINGate(nvals, mulList, bitlen_8*fileNUM, SERVER);
 	s_msg = circ->PutDummyINGate(bitlen_16*fileNUM);
 	share* s_quotient = BuildInverseRandomCircuit(s_msg, s_divRand, s_subRand, fileNUM, nvals, circ);
-	// share* s_sub_temp = circ->PutCONSGate(one, bitlen_8*fileNUM);
-	// s_quotient = circ->PutSUBGate(s_quotient, s_sub_temp);
-	s_div_out = circ->PutOUTGate(s_quotient, SERVER); 
-	
-	// std::vector<share*> msgV;
-	// for(int i = 0;i < 6;i++){
-	// 	share *s_div_out, *s_msg, *s_divRand, *s_subRand;
-	// 	s_msg = circ->PutINGate(cc[i], bitlen_16, CLIENT);
-	// 	s_msg = new boolshare(16, circ);
 
-	// 	s_subRand = circ->PutINGate(addList[i], bitlen_8, SERVER);
-	// 	s_divRand = circ->PutINGate(mulList[i], bitlen_8, SERVER);
-
-	// 	share* s_quotient = BuildInverseRandomCircuit(s_msg, s_divRand, s_subRand, nvals, circ);
-	// 	s_div_out = circ->PutOUTGate(s_quotient, ALL);
-	// 	msgV.push_back(s_div_out);
-	// 	circ->PutPrintValueGate(s_quotient , "s_quotient");
-	// }
-	party->ExecCircuit();
-	out.AttachBuf(s_div_out->get_clear_value_ptr(), (uint64_t) bitlen_8*fileNUM * nvals);
-	// out.Create(6*8);
-	// for(int i = 0;i < 6;i++){
-	// 	uint8_t* output = msgV[i]->get_clear_value_ptr();/
-	// 	out.SetBytes(output, i, 1);
-	// }
-
-	for (uint32_t i = 0; i < fileNUM /8; i++) {
-		std::cout << "(" << i << ") Circ:\t";
-		out.PrintHex(i * 8, (i + 1) * 8);
-	}
-	delete party;
-
-	return 0;
-}
-
-int32_t test_sha1_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing) {
-	uint32_t bitlen = 32;
-	uint32_t sha1bits_per_party = ABY_SHA1_INPUT_BITS/2;
-	uint32_t sha1bytes_per_party = bits_in_bytes(sha1bits_per_party);
-	ABYParty* party = new ABYParty(role, address, port, seclvl, bitlen, nthreads, mt_alg);
-	std::vector<Sharing*>& sharings = party->GetSharings();
-
-	crypto* crypt = new crypto(seclvl.symbits, (uint8_t*) const_seed);
-	CBitVector msgS, msgC, verify;
-	// uint32_t testvec = 0x616263;
-
-	//The plaintext output computation will only be done once instead of nvals times!
+	uint8_t buf[64] = {0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
+    0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61 };
 	uint8_t* plain_out = (uint8_t*) malloc(ABY_SHA1_OUTPUT_BYTES);
-
-	msgS.Create(sha1bits_per_party * nvals, crypt);
-	msgC.Create(sha1bits_per_party * nvals, crypt);
-	//Result for this should be: 0098ba824b5c16427bd7a1122a5a442a25ec644d
-	for(uint32_t i = 0; i < sha1bytes_per_party; i++) {
-		msgS.SetByte(i, 0x61);
-		msgC.SetByte(i, 0x61);
-	}
-	// msgS.SetBits((uint8_t*) &testvec, 0, 24);
-
-	verify.Create(ABY_SHA1_OUTPUT_BITS * nvals);
-
-	uint8_t* output;
-
-	Circuit* circ = sharings[sharing]->GetCircuitBuildRoutine();
-	//Circuit build routine works for Boolean circuits only right now
-	assert(circ->GetCircuitType() == C_BOOLEAN);
-
-	share *s_msgS, *s_msgC, *s_hash_out;
-	// s_msgS = circ->PutSIMDINGate(nvals, msgS.GetArr(), sha1bits_per_party, SERVER);
-	// s_msgC = circ->PutSIMDINGate(nvals, msgC.GetArr(), sha1bits_per_party, CLIENT);
-	if(role == SERVER) {
-		s_msgC = circ->PutDummyINGate(sha1bits_per_party);
-		s_msgS = circ->PutSIMDINGate(nvals, msgS.GetArr(), sha1bits_per_party, SERVER);
-	} else { //role == CLIENT
-		s_msgC = circ->PutSIMDINGate(nvals, msgC.GetArr(), sha1bits_per_party, CLIENT);
-		s_msgS = circ->PutDummyINGate(sha1bits_per_party);
-	}
-	std::cout<<"hello"<<std::endl;
-	s_hash_out = BuildSHA1Circuit(s_msgS, s_msgC, msgS.GetArr(), msgC.GetArr(), plain_out, nvals, (BooleanCircuit*) circ);
+	share* s_hash_out = BuildSHA1Circuit(s_quotient, buf, plain_out, nvals, (BooleanCircuit*) circ);
 
 	s_hash_out = circ->PutOUTGate(s_hash_out, ALL);
 
 	party->ExecCircuit();
 
-	output = s_hash_out->get_clear_value_ptr();
+	CBitVector verify;
+	verify.Create(ABY_SHA1_OUTPUT_BITS * nvals);
+	out.AttachBuf(s_hash_out->get_clear_value_ptr(), (uint64_t) ABY_SHA1_OUTPUT_BITS * nvals);
 
-	CBitVector out;
-	out.AttachBuf(output, (uint64_t) ABY_SHA1_OUTPUT_BITS * nvals);
+	verify_SHA1_hash(buf, ABY_SHA1_INPUT_BYTES, nvals, verify.GetArr());
 
-	verify_SHA1_hash(msgS.GetArr(), msgC.GetArr(), sha1bytes_per_party, nvals, verify.GetArr());
-
-#ifndef BATCH
-	std::cout << "Plaintext output: " << (hex) << std::endl;
-	for(uint32_t i = 0; i < 20; i++) {
-		std::cout << (uint32_t) plain_out[i];
-	}
-	std::cout << (dec) << std::endl;
-
-
-	std::cout << "Testing SHA1 hash in " << get_sharing_name(sharing) << " sharing: " << std::endl;
-#endif
 	for (uint32_t i = 0; i < nvals; i++) {
-// #ifndef BATCH
-		std::cout << "(" << i << ") Server Input:\t";
-		msgS.PrintHex(i * sha1bytes_per_party, (i + 1) * sha1bytes_per_party);
-		std::cout << "(" << i << ") Client Input:\t";
-		msgC.PrintHex(i * sha1bytes_per_party, (i + 1) * sha1bytes_per_party);
 		std::cout << "(" << i << ") Circ:\t";
 		out.PrintHex(i * ABY_SHA1_OUTPUT_BYTES, (i + 1) * ABY_SHA1_OUTPUT_BYTES);
 		std::cout << "(" << i << ") Verify:\t";
 		verify.PrintHex(i * ABY_SHA1_OUTPUT_BYTES, (i + 1) * ABY_SHA1_OUTPUT_BYTES);
-// #endif
 		assert(verify.IsEqual(out, i*ABY_SHA1_OUTPUT_BITS, (i+1)*ABY_SHA1_OUTPUT_BITS));
 	}
+	// party->ExecCircuit();
+	// out.AttachBuf(s_div_out->get_clear_value_ptr(), (uint64_t) bitlen_8*fileNUM * nvals);
 
-	delete crypt;
+
+	// for (uint32_t i = 0; i < fileNUM /8; i++) {
+	// 	std::cout << "(" << i << ") Circ:\t";
+	// 	out.PrintHex(i * 8, (i + 1) * 8);
+	// }
 	delete party;
 
 	return 0;
 }
+
 
 share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t fileNUM, uint32_t nvals, BooleanCircuit* circ){
 	uint32_t zero = 0;
@@ -234,9 +127,7 @@ share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uin
 		for(uint32_t j = 0; j < 16; j++) {
 			s_msg_temp->set_wire_id(j, msg->get_wire_id(msgIndex++));
 		}
-		circ->PutPrintValueGate(s_msg_temp, "sub_before");
 		s_msg_temp = circ->PutSUBGate(s_msg_temp, s_sub_temp);
-		circ->PutPrintValueGate(s_msg_temp, "sub_after");
 		share* s_quotient = BuildDivCircuit(s_msg_temp, s_div_temp, nvals, circ);
 		for(uint32_t j = 0; j < 8; j++) {
 			out->set_wire_id(outIndex++, s_quotient->get_wire_id(j));
@@ -256,7 +147,6 @@ share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uin
 		s_temp->set_wire_id(j, subRand->get_wire_id(j));
 	}
 	msg = circ->PutSUBGate(msg, s_temp);
-	circ->PutPrintValueGate(msg , "msg");
 	share* s_quotient = BuildDivCircuit(msg, divRand, nvals, circ);
 	return s_quotient;
 	// uint8_t *output_remainder;
@@ -302,32 +192,30 @@ share* BuildDivCircuit(share* dividend, share* divisor, uint32_t nvals, BooleanC
 		// circ->PutPrintValueGate(s_quotient , "temp s_quotient");
 		cnt --;
     }while(cnt!=0);
-	circ->PutPrintValueGate(s_quotient , "final s_quotient");
+	// circ->PutPrintValueGate(s_quotient , "final s_quotient");
 	share* flag = circ->PutEQGate(s_remainder, s_zero);
-	circ->PutPrintValueGate(flag , "flag");
+	// circ->PutPrintValueGate(flag , "flag");
 	circ->PutAssertGate(flag, one, 16);
 	return s_quotient;
 }
 
 
 /* Steps are taken from the wikipedia article on SHA1 */
-share* BuildSHA1Circuit(share* s_msgS, share* s_msgC, uint8_t* msgS, uint8_t* msgC, uint8_t* plain_out, uint32_t nvals, BooleanCircuit* circ) {
+share* BuildSHA1Circuit(share* s_msgInput, uint8_t* msgInput, uint8_t* plain_out, uint32_t nvals, BooleanCircuit* circ) {
 
 	uint32_t party_in_bitlen = ABY_SHA1_INPUT_BITS/2;
 	uint32_t party_in_bytelen = ABY_SHA1_INPUT_BYTES/2;
 
 	//Copy shared input into one msg
 	share* s_msg = new boolshare(ABY_SHA1_INPUT_BITS, circ);
-	for(uint32_t i = 0; i < party_in_bitlen; i++) {
-		s_msg->set_wire_id(i, s_msgS->get_wire_id(i));
-		s_msg->set_wire_id(i+party_in_bitlen, s_msgC->get_wire_id(i));
+	for(uint32_t i = 0; i < ABY_SHA1_INPUT_BITS; i++) {
+		s_msg->set_wire_id(i, s_msgInput->get_wire_id(i));
 	}
 
 	//Copy plaintext input into one msg
 	uint8_t* tmp_plain_out = (uint8_t*) malloc(ABY_SHA1_OUTPUT_BYTES);
 	uint8_t* msg = (uint8_t*) malloc(ABY_SHA1_INPUT_BYTES);
-	memcpy(msg, msgS, party_in_bytelen);
-	memcpy(msg+party_in_bytelen, msgC, party_in_bytelen);
+	memcpy(msg, msgInput, ABY_SHA1_INPUT_BYTES);
 
 	//initialize state variables
 	share** s_h = (share**) malloc(sizeof(share*) * 5);
@@ -632,14 +520,13 @@ void sha1_main_loop(share** s_h, share** s_w, uint32_t* h, uint32_t* w, uint32_t
 	h[4] = (h[4] + e) & 0xFFFFFFFF;
 }
 
-void verify_SHA1_hash(uint8_t* msgS, uint8_t* msgC, uint32_t msgbytes_per_party, uint32_t nvals, uint8_t* hash) {
+void verify_SHA1_hash(uint8_t* msg, uint32_t msgbytes, uint32_t nvals, uint8_t* hash) {
 
 	uint8_t* input_buf = (uint8_t*) calloc(ABY_SHA1_INPUT_BYTES, sizeof(uint8_t));
 	crypto* crypt_tmp = new crypto(80, (uint8_t*) const_seed);
 
 	for(uint32_t i = 0; i < nvals; i++) {
-		memcpy(input_buf, msgS + i * msgbytes_per_party, msgbytes_per_party);
-		memcpy(input_buf + msgbytes_per_party, msgC + i * msgbytes_per_party, msgbytes_per_party);
+		memcpy(input_buf, msg, msgbytes);
 		crypt_tmp->hash(hash+i*ABY_SHA1_OUTPUT_BYTES, ABY_SHA1_OUTPUT_BYTES, input_buf, ABY_SHA1_INPUT_BYTES);
 	}
 	delete crypt_tmp;
