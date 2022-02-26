@@ -224,17 +224,43 @@ int main(){
       printf("%d ",int_quotient);
     }
     std::cout<<std::endl;
-    std::vector<int> randMulList = GenerateRanNumber(0, 127,fileNUM);
+    int mulNum = fileNUM / 8;
+    std::vector<int> ifmulList = GenerateRanNumber(0, fileNUM, mulNum);
+    std::vector<int> ifMul(fileNUM);
+    for(int i = 0;i < mulNum; i++){
+      ifMul[ifmulList[i]] = 1;
+    }
+    for(int i = 0;i < fileNUM; i++){
+      if(ifMul[i] != 1)
+        ifMul[i]=0;
+      printf("%d ",ifMul[i]);
+    }
+    std::vector<int> tempRandMulList = GenerateRanNumber(0, 127,mulNum);
+    std::vector<int> randMulList(fileNUM);
+    for(int i = 0, j = 0;i < fileNUM; i++){
+      if(ifMul[i] == 1 )
+        randMulList[i] = tempRandMulList[j++];
+      else
+        randMulList[i] = 1;
+    }
     std::vector<LweSample*> tempMul;
     std::vector<LweSample*> tempAdd;
     LweSample* constant = new_gate_bootstrapping_ciphertext_array(16, params);
     for(int i =0; i < fileNUM; i++){
-      for(int j =0; j < 16; j++)
-        bootsCONSTANT(&constant[j], (randMulList[i]>>j)&1, bk);
-      LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, params);
-      printf("%d ",randMulList[i]);
-      multiply(temp, cipherArray[i], constant, 8, bk);
-      tempMul.push_back(temp);
+        for(int j =0; j < 16; j++)
+          bootsCONSTANT(&constant[j], (randMulList[i]>>j)&1, bk);
+        LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, params);
+        printf("%d ",randMulList[i]);
+        if(ifMul[i] == 1){
+          multiply(temp, cipherArray[i], constant, 8, bk);
+        }
+        else{
+            for(int j=0; j < 8; j++)
+              bootsCOPY(&temp[j],&cipherArray[i][j], bk);
+            for(int j=8; j < 16; j++)
+              bootsCONSTANT(&temp[j], 0, bk);
+        }
+        tempMul.push_back(temp);
     }
     std::cout<< "pause"<<std::endl;
 
