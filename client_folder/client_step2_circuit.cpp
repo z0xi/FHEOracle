@@ -50,16 +50,16 @@ share* BuildDivCircuit(share* dividend, share* divisor, uint32_t nvals, BooleanC
 	return s_quotient;
 }
 
-share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t fileNUM, uint32_t nvals, BooleanCircuit* circ){
+share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uint32_t bufSize, uint32_t nvals, BooleanCircuit* circ){
 	uint32_t zero = 0;
 	uint32_t one = 0;
 	uint32_t bitlen_8 = 8;
-	share* out = new boolshare(bitlen_8 * fileNUM, circ);
+	share* out = new boolshare(bitlen_8 * bufSize, circ);
 	int subIndex = 0;
 	int msgIndex = 0;
 	int divIndex = 0;
 	int outIndex = 0;
-	for(int i =0; i < fileNUM; i++){
+	for(int i =0; i < bufSize; i++){
 		share* s_zero= circ->PutCONSGate(zero, 16);
 		share* s_one= circ->PutCONSGate(one, 16);
 		share* s_sub_temp = circ->PutCONSGate(zero, 16);
@@ -88,7 +88,8 @@ share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uin
 int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing) {
 	uint32_t bitlen_8 = 8;
 	uint32_t bitlen_16 = 16;
-	uint32_t fileNUM = 64;
+	uint32_t bufSize = 64;
+	uint64_t msgSize = 64;
 	uint32_t divbits_per_party = 8;
 	uint32_t divbytes_per_party = bits_in_bytes(divbits_per_party);
 	ABYParty* party = new ABYParty(role, address, port, seclvl, bitlen_16, nthreads, mt_alg);
@@ -102,8 +103,8 @@ int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t 
     fclose(secret_key);
 	FILE* answer_data = fopen("server_folder/confused_data","rb");
 	LweSample* confused_data = new_gate_bootstrapping_ciphertext_array(16, params);
-	uint16_t msgArray[fileNUM];
-	for(int j = 0;j < fileNUM;j++){
+	uint16_t msgArray[bufSize];
+	for(int j = 0;j < bufSize;j++){
         for (int i=0; i<16; i++) 
         import_gate_bootstrapping_ciphertext_fromFile(answer_data, &confused_data[i], params);
         uint16_t answer = 0;
@@ -117,18 +118,19 @@ int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t 
 	fclose(answer_data);
 
 	// CBitVector msgShare;
-	// msgShare.Create(bitlen_16*fileNUM);
-	// for(uint32_t i = 0; i < fileNUM; i++) {
+	// msgShare.Create(bitlen_16*bufSize);
+	// for(uint32_t i = 0; i < bufSize; i++) {
 		// msgShare.SetByte(i, msgArray[i]);
 	// }
 
-	// circ->PutSIMDINGate(nvals, msgShare.GetArr(), bitlen_16*fileNUM, CLIENT);
+	// circ->PutSIMDINGate(nvals, msgShare.GetArr(), bitlen_16*bufSize, CLIENT);
 	share *s_div_out, *s_msg, *s_divRand, *s_subRand;
-	s_msg = circ->PutSIMDINGate(nvals, msgArray, bitlen_16*fileNUM, CLIENT);
-	s_subRand = circ->PutDummyINGate(bitlen_8*fileNUM);
-	s_divRand = circ->PutDummyINGate(bitlen_8*fileNUM);
+	s_msg = circ->PutSIMDINGate(nvals, msgArray, bitlen_16*bufSize, CLIENT);
+	s_subRand = circ->PutDummyINGate(bitlen_8*bufSize);
+	s_divRand = circ->PutDummyINGate(bitlen_8*bufSize);
 
-	share* s_quotient = BuildInverseRandomCircuit(s_msg, s_divRand, s_subRand, fileNUM, nvals, circ);
+	share* s_quotient = BuildInverseRandomCircuit(s_msg, s_divRand, s_subRand, bufSize, nvals, circ);
+	circ->PutPrintValueGate(s_quotient , "s_quotient");
 	uint8_t  buf[64] = {0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
     0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
     0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
@@ -157,7 +159,7 @@ int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t 
 	// 	verify.PrintHex(i * ABY_SHA1_OUTPUT_BYTES, (i + 1) * ABY_SHA1_OUTPUT_BYTES);
 	// 	assert(verify.IsEqual(out, i*ABY_SHA1_OUTPUT_BITS, (i+1)*ABY_SHA1_OUTPUT_BITS));
 	// }
-	share* s_hash_out = BuildSHA256Circuit(s_quotient, nvals, (BooleanCircuit*) circ);
+	share* s_hash_out = BuildSHA256Circuit(s_quotient, nvals, bufSize, msgSize, (BooleanCircuit*) circ);
 
 	s_hash_out = circ->PutOUTGate(s_hash_out, ALL);
 
@@ -183,49 +185,61 @@ int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t 
 
 
 /* Steps are taken from the wikipedia article on SHA1 */
-share* BuildSHA256Circuit(share* s_msgInput, uint32_t nvals, BooleanCircuit* circ) {
+share* BuildSHA256Circuit(share* s_msgInput, uint32_t nvals, uint32_t bufSize, uint64_t msgSize, BooleanCircuit* circ) {
 
-	//Copy shared input into one msg
-	share* s_msg = new boolshare(ABY_SHA256_INPUT_BITS, circ);
-	for(uint32_t i = 0; i < ABY_SHA256_INPUT_BITS; i++) {
-		s_msg->set_wire_id(i, s_msgInput->get_wire_id(i));
-	}
-
-	//initialize state variables
-	share** s_h = (share**) malloc(sizeof(share*) * 8);
-	init_variables(s_h, nvals, circ);
-
-	/*
-	 * Process this message block
-	 */
-
-	share* out = process_block(s_msg, s_h, nvals, circ);
-	// for(int i =0; i < 8; i++){
-	// 	for(int j = 0; j < 32;j++){
-	// 		s_h[i]->set_wire_id(j, out->get_wire_id(32*i +j));
-	// 	}
-	// }
-	/*
-	 * Do the final SHA1 Result computation.
-	 * TODO: The remaining block should be padded and processed here. However, since the
-	 * input bit length is fixed to 512 bit, the padding is constant.
-	 */
 	uint64_t zero = 0;
 	uint64_t one = 1;
 	share* s_zero = circ->PutSIMDCONSGate(nvals, zero, 1);
 	share* s_one = circ->PutSIMDCONSGate(nvals, one, 1);
-	for(uint32_t i = 0; i < 512; i++) {
-		if(i != 7 && i != 497) {
-			s_msg->set_wire_id(i, s_zero->get_wire_id(0));
+	int lastBlockLen = msgSize - (msgSize / 64) * 64;
+	int outputBytesLen;
+	int round;
+	if(lastBlockLen < 56){
+		outputBytesLen = msgSize + 64 - lastBlockLen;
+	}
+	else{
+		outputBytesLen = msgSize + 64 - lastBlockLen + 64;
+	}
+	round = outputBytesLen /64;
+	share* s_pad_msg = new boolshare(outputBytesLen * 8, circ);
+	for(uint32_t i = 0; i < msgSize * 8; i++) {
+		s_pad_msg->set_wire_id(i, s_msgInput->get_wire_id(i));
+	}
+	for(uint32_t i = msgSize * 8; i < outputBytesLen * 8 - 64; i++) {
+		if(i == msgSize * 8 + 7 ) {
+			s_pad_msg->set_wire_id(i, s_one->get_wire_id(0));
 		} else {
-			s_msg->set_wire_id(i, s_one->get_wire_id(0));
+			s_pad_msg->set_wire_id(i, s_zero->get_wire_id(0));
 		}
 	}
+	share* s_lastchunk = circ->PutCONSGate(msgSize * 8, 64);
+	for(uint32_t i = outputBytesLen * 8 - 64, j = 64; i < outputBytesLen * 8; j-=8) {
+		for(uint32_t k = 0; k < 8; k++)
+			s_pad_msg->set_wire_id(i++, s_lastchunk->get_wire_id(j - 8 + k));
+	}
+	//initialize state variables
+	share** s_h = (share**) malloc(sizeof(share*) * 8);
+	init_variables(s_h, nvals, circ);
 
-	out = process_block(s_msg, s_h, nvals, circ);
 
+	//Copy shared input into one msg
+	share* s_out = new boolshare(ABY_SHA256_OUTPUT_BITS, circ);
+	share* s_msg = new boolshare(ABY_SHA256_INPUT_BITS, circ);
+
+
+	for(uint32_t i = 0; i <round ; i++) {
+		for(uint32_t j = 0,k = i*512; j < ABY_SHA256_INPUT_BITS;j++,k++) {
+			s_msg->set_wire_id(j, s_pad_msg->get_wire_id(k));
+		}
+		share *out = process_block(s_msg, s_h, nvals, circ);
+		if( i == round-1){
+			for(int k = 0; k < ABY_SHA256_OUTPUT_BITS; k++) {
+				s_out->set_wire_id(k, out->get_wire_id(k));
+			}
+		}
+	}
 	free(s_h);
-	return out;
+	return s_out;
 }
 
 /* Steps are taken from the wikipedia article on SHA1 */

@@ -77,7 +77,7 @@ share* BuildDivCircuit(share* dividend, share* divisor, uint32_t nvals, BooleanC
 
 
 share* BuildSHA1Circuit(share* s_msgS, uint8_t* msg, uint8_t* plain_out, uint32_t nvals, BooleanCircuit* circ);
-share* BuildSHA256Circuit(share* s_msgS, uint32_t nvals, BooleanCircuit* circ);
+share* BuildSHA256Circuit(share* s_msgInput, uint32_t nvals, uint32_t bufSize, uint64_t msgSize, BooleanCircuit* circ);
 share* process_block(share* s_msg, uint8_t* msg, uint8_t* tmp_int_out, share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ);
 share* process_block(share* s_msg, share** s_h, uint32_t nvals, BooleanCircuit* circ);
 
