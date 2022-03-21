@@ -81,6 +81,7 @@ share* BuildSHA256Circuit(share* s_msgInput, uint32_t nvals, uint32_t bufSize, u
 share* process_block(share* s_msg, uint8_t* msg, uint8_t* tmp_int_out, share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ);
 share* process_block(share* s_msg, share** s_h, uint32_t nvals, BooleanCircuit* circ);
 
+void init_AH(share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ);
 void init_variables(share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ);
 void init_variables(share** s_h, uint32_t nvals, BooleanCircuit* circ);
 void break_message_to_chunks(share** s_w, share* s_msg, uint32_t* w, uint8_t* msg, BooleanCircuit* circ);

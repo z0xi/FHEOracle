@@ -13,7 +13,7 @@ add_executable(client_step2 client_step2.cpp client_folder/client_step2_circuit.
 add_executable(server_step2 server_step2.cpp server_folder/server_step2_circuit.cpp)
 
 add_executable(client_step1 client_step1.cpp)
-add_executable(server_step1 server_step1.cpp)
+add_executable(server_step1 server_step1.cpp SHA256.cpp)
 target_link_libraries(client_step1 -ltfhe-spqlios-fma)
 target_link_libraries(server_step1 -ltfhe-spqlios-fma)
 

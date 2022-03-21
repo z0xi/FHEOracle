@@ -88,8 +88,8 @@ share* BuildInverseRandomCircuit(share* msg, share* divRand, share* subRand, uin
 int32_t test_protocol_circuit(e_role role, const std::string& address, uint16_t port, seclvl seclvl, uint32_t nvals, uint32_t nthreads, e_mt_gen_alg mt_alg, e_sharing sharing) {
 	uint32_t bitlen_8 = 8;
 	uint32_t bitlen_16 = 16;
-	uint32_t bufSize = 64;
-	uint64_t msgSize = 64;
+	uint32_t bufSize = 128;
+	uint64_t msgSize = 128;
 	uint32_t divbits_per_party = 8;
 	uint32_t divbytes_per_party = bits_in_bytes(divbits_per_party);
 	ABYParty* party = new ABYParty(role, address, port, seclvl, bitlen_16, nthreads, mt_alg);
@@ -336,6 +336,17 @@ void init_variables(share** s_h, uint32_t nvals, BooleanCircuit* circ) {
 	s_h[5] = circ->PutSIMDCONSGate(nvals, ABY_SHA256_H5, 32);
 	s_h[6] = circ->PutSIMDCONSGate(nvals, ABY_SHA256_H6, 32);
 	s_h[7] = circ->PutSIMDCONSGate(nvals, ABY_SHA256_H7, 32);
+}
+
+void init_AH(share** s_h, uint32_t* h, uint32_t nvals, BooleanCircuit* circ) {
+	s_h[0] = circ->PutSIMDCONSGate(nvals, h[0], 32);
+	s_h[1] = circ->PutSIMDCONSGate(nvals, h[1], 32);
+	s_h[2] = circ->PutSIMDCONSGate(nvals, h[2], 32);
+	s_h[3] = circ->PutSIMDCONSGate(nvals, h[3], 32);
+	s_h[4] = circ->PutSIMDCONSGate(nvals, h[4], 32);
+	s_h[5] = circ->PutSIMDCONSGate(nvals, h[5], 32);
+	s_h[6] = circ->PutSIMDCONSGate(nvals, h[6], 32);
+	s_h[7] = circ->PutSIMDCONSGate(nvals, h[7], 32);
 }
 
 share* process_block(share* s_msg, share** s_h, uint32_t nvals, BooleanCircuit* circ) {
