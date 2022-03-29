@@ -6,34 +6,8 @@
 #include <tfhe/tfhe_io.h>
 #include"cstdlib"
 #include "SHA256.h"
+#include <thread>
 #include<functional>
-#define MAX 20000
-struct element{     //用来排序的数据结构 
-		int data;  // 数据 
-		int index;  // 序号 
-};
-int exec_cmd(std::string cmd, std::string &res){
-  if (cmd.size() == 0){  //cmd is empty 
-    return -1;
-  }
- 
-  char buffer[1024] = {0};
-  std::string result = "";
-  FILE *pin = popen(cmd.c_str(), "r");
-  if (!pin) { //popen failed 
-    return -1;
-  }
- 
-  res.clear();
-  while(!feof(pin)){
-    if(fgets(buffer, sizeof(buffer), pin) != NULL){
-      result += buffer;
-    }
-  }
- 
-  res = result;
-  return pclose(pin); //-1:pclose failed; else shell ret
-}
 
 std::vector<int> GenerateRanNumber(int min,int max,int num)
 {
@@ -47,6 +21,32 @@ std::vector<int> GenerateRanNumber(int min,int max,int num)
     }
     return diff;
 }
+
+void full_adder_MUX(LweSample *sum, const LweSample *x, const LweSample *y, const int32_t nb_bits,
+                    const TFheGateBootstrappingCloudKeySet* bk) {
+    // carries
+    LweSample *carry = new_gate_bootstrapping_ciphertext_array(2, bk->params);
+      bootsCONSTANT(&carry[0], 0, bk);
+  bootsCONSTANT(&carry[1], 0, bk); // first carry initialized to 0
+    // temps
+    LweSample *temp = new_gate_bootstrapping_ciphertext_array(2, bk->params);
+    for (int32_t i = 0; i < nb_bits; ++i) {
+        //sumi = xi XOR yi XOR carry(i-1) 
+        bootsXOR(temp, x + i, y + i, bk); // temp = xi XOR yi
+        bootsXOR(sum + i, temp, carry, bk);
+
+        // carry = MUX(xi XOR yi, carry(i-1), xi AND yi)
+        bootsAND(temp + 1, x + i, y + i, bk); // temp1 = xi AND yi
+        bootsMUX(carry + 1, temp, carry, temp + 1, bk);
+
+        bootsCOPY(carry, carry + 1, bk);
+    }
+    // bootsCOPY(sum + nb_bits, carry, bk);
+
+    delete_gate_bootstrapping_ciphertext_array(2, temp);
+    delete_gate_bootstrapping_ciphertext_array(2, carry);
+}
+
 void Adder(LweSample* result, const LweSample* a, const LweSample* b, const int nb_bits, const TFheGateBootstrappingCloudKeySet* bk) {
   LweSample* tmps = new_gate_bootstrapping_ciphertext_array(4, bk->params);
 
@@ -136,12 +136,84 @@ void multiply(LweSample* product, LweSample* a, LweSample* b, const int nb_bits,
         }
 
         //Add the valid result to partial_sum//
-        Adder(partial_sum,product,temp_result,2*nb_bits,bk);
+        // Adder(partial_sum,product,temp_result,2*nb_bits,bk);
+        full_adder_MUX(partial_sum,product,temp_result,2*nb_bits,bk);
         //Change the partial sum to final product//
         for(int j=0;j<2*nb_bits;j++){ 
             bootsCOPY(&product[j],&partial_sum[j],bk);
         }
     }
+}
+
+void threadMultiply(std::vector<LweSample*> &product, std::vector<LweSample*> ciphertext, std::vector<int> mulList, int threadNum, const TFheGateBootstrappingCloudKeySet* bk)
+{
+  int num = ciphertext.size();
+	// std::vector<pthread_t> calThreads(threadNum);
+  std::vector<std::thread> my_threads;
+  for(int i =0; i < num; i++){
+    LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, bk->params);
+    product.push_back(temp);
+  }
+  std::vector<int> noMul;
+  std::vector<int> mul;
+  for(int i =0; i < num; i++){
+    if(mulList[i] == 1)
+      noMul.push_back(i);
+    else
+      mul.push_back(i);
+  }
+
+  for (int i = 0; i < noMul.size(); i++){
+    for(int k=0; k < 8; k++)
+      bootsCOPY(&product[noMul[i]][k],&ciphertext[noMul[i]][k], bk);
+    for(int k=8; k < 16; k++)
+      bootsCONSTANT(&product[noMul[i]][k], 0, bk);
+  }
+
+  for (int i = 0; i < mul.size(); ){
+    int j = 0;
+    for(; j < threadNum; j++){
+        LweSample* constant = new_gate_bootstrapping_ciphertext_array(16, bk->params);
+        for(int k =0; k < 16; k++)
+          bootsCONSTANT(&constant[k], (mulList[mul[i+j]]>>k)&1, bk);
+        my_threads.push_back(std::thread(multiply, product[mul[i+j]], ciphertext[mul[i+j]], constant, 8, bk));
+        // std::cout<<"thread begin "<< my_threads[j].get_id() <<std::endl;
+    }
+    void *status;
+    for(int k = 0; k < threadNum; k++ ) {
+      my_threads[k].join();
+    }
+    my_threads.clear();
+    i = i + threadNum;
+  }
+}
+
+void threadAdd(std::vector<LweSample*> &product, std::vector<LweSample*> ciphertext, std::vector<int> addList, int threadNum, const TFheGateBootstrappingCloudKeySet* bk)
+{
+  int num = ciphertext.size();
+	// std::vector<pthread_t> calThreads(threadNum);
+  std::vector<std::thread> my_threads;
+  for(int i =0; i < num; i++){
+    LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, bk->params);
+    product.push_back(temp);
+  }
+
+  for (int i = 0; i < num; ){
+    int j = 0;
+    for(; j < threadNum; j++){
+        LweSample* constant = new_gate_bootstrapping_ciphertext_array(16, bk->params);
+        for(int k =0; k < 16; k++)
+          bootsCONSTANT(&constant[k], (addList[i+j]>>k)&1, bk);
+        my_threads.push_back(std::thread(full_adder_MUX, product[i+j], ciphertext[i+j], constant, 16, bk));
+        // std::cout<<"thread begin "<< my_threads[j].get_id() <<std::endl;
+    }
+    void *status;
+    for(int k = 0; k < threadNum; k++ ) {
+      my_threads[k].join();
+    }
+    my_threads.clear();
+    i = i + threadNum;
+  }
 }
 
 
@@ -173,14 +245,15 @@ int main(){
     0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61, 
     0x61,0x61,0x61,0x61,0x61,0x61, 0x61,0x61 };
 
-    // FILE* secret_key = fopen("client_folder/secret.key","rb");
-    // TFheGateBootstrappingSecretKeySet* key = new_tfheGateBootstrappingSecretKeySet_fromFile(secret_key);
-    // fclose(secret_key);
+    FILE* secret_key = fopen("client_folder/secret.key","rb");
+    TFheGateBootstrappingSecretKeySet* key = new_tfheGateBootstrappingSecretKeySet_fromFile(secret_key);
+    fclose(secret_key);
 
     //reads the cloud key from file
     FILE* cloud_key = fopen("client_folder/cloud.key","rb");
     TFheGateBootstrappingCloudKeySet* bk = new_tfheGateBootstrappingCloudKeySet_fromFile(cloud_key);
     fclose(cloud_key);
+    // const TFheGateBootstrappingCloudKeySet bk = key->cloud;
 
     //if necessary, the params are inside the key
     const TFheGateBootstrappingParameterSet* params = bk->params;
@@ -223,32 +296,38 @@ int main(){
     std::vector<LweSample*> tempMul;
     std::vector<LweSample*> tempAdd;
     LweSample* constant = new_gate_bootstrapping_ciphertext_array(16, params);
-    for(int i =0; i < fileNUM; i++){
-        for(int j =0; j < 16; j++)
-          bootsCONSTANT(&constant[j], (randMulList[i]>>j)&1, bk);
-        LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, params);
-        printf("%d ",randMulList[i]);
-        if(ifMul[i] == 1){
-          multiply(temp, cipherArray[i], constant, 8, bk);
-        }
-        else{
-            for(int j=0; j < 8; j++)
-              bootsCOPY(&temp[j],&cipherArray[i][j], bk);
-            for(int j=8; j < 16; j++)
-              bootsCONSTANT(&temp[j], 0, bk);
-        }
-        tempMul.push_back(temp);
-    }
+    // for(int i =0; i < fileNUM; i++){
+    //     for(int j =0; j < 16; j++)
+    //       bootsCONSTANT(&constant[j], (randMulList[i]>>j)&1, bk);
+    //     LweSample* temp = new_gate_bootstrapping_ciphertext_array(16, params);
+    //     printf("%d ",randMulList[i]);
+    //     if(ifMul[i] == 1){
+    //       multiply(temp, cipherArray[i], constant, 8, bk);
+    //       // bootsMultiply(temp, cipherArray[i], constant, 8, bk);
+    //     }
+    //     else{
+    //         for(int j=0; j < 8; j++)
+    //           bootsCOPY(&temp[j],&cipherArray[i][j], bk);
+    //         for(int j=8; j < 16; j++)
+    //           bootsCONSTANT(&temp[j], 0, bk);
+    //           // multiply(temp, cipherArray[i], constant, 8, bk);
+    //           // bootsMultiply(temp, cipherArray[i], constant, 8, bk);
+    //     }
+    //     tempMul.push_back(temp);
+    // }
+    threadMultiply(tempMul, cipherArray, randMulList, 2, bk);
     std::cout<< "Mul finished"<<std::endl;
     std::vector<int> randAddList = GenerateRanNumber(0, 127,fileNUM);
-    for(int i =0; i < fileNUM; i++){
-      for(int j =0; j < 16; j++)
-        bootsCONSTANT(&constant[j], (randAddList[i]>>j)&1, bk);
-      LweSample* temp= new_gate_bootstrapping_ciphertext_array(16, params);
-      printf("%d ",randAddList[i]);
-      Adder(temp, tempMul[i], constant, 16, bk);
-      tempAdd.push_back(temp);
-    }
+    threadAdd(tempAdd, tempMul, randAddList, 2, bk);
+    // for(int i =0; i < fileNUM; i++){
+    //   for(int j =0; j < 16; j++){
+    //     bootsCONSTANT(&constant[j], (randAddList[i]>>j)&1, bk);
+    //   } 
+    //   LweSample* temp= new_gate_bootstrapping_ciphertext_array(16, params);
+    //   // Adder(temp, cipherArray[i], constant, 8, bk);
+    //   full_adder_MUX(temp, tempMul[i], constant, 16, bk);
+    //   tempAdd.push_back(temp);
+    // }
     std::cout<< "Add finished"<<std::endl;
 
     //Save obfuscated ciphertext
@@ -266,18 +345,18 @@ int main(){
     LweSample* remainder = new_gate_bootstrapping_ciphertext_array(16, params);
 
     //Just for checking the obfuscated data
-    // FILE* answer_data = fopen("server_folder/client_X_confused_data","rb");
-    // for(int j = 0;j < fileNUM;j++){
-    //     for (int i=0; i<16; i++) 
-    //       import_gate_bootstrapping_ciphertext_fromFile(answer_data, &remainder[i], params);
-    //     int answer = 0;
-    //     for (int i=0; i<16; i++) {
-    //       int ai = bootsSymDecrypt(&remainder[i], key)>0;
-    //       answer |= (ai<<i);
-    //     }
-    //     std::cout<<answer<<" ";
-    // }
-    // fclose(answer_data);
+    FILE* answer_data = fopen("server_folder/confused_data","rb");
+    for(int j = 0;j < fileNUM;j++){
+        for (int i=0; i<16; i++) 
+          import_gate_bootstrapping_ciphertext_fromFile(answer_data, &remainder[i], params);
+        int answer = 0;
+        for (int i=0; i<16; i++) {
+          int ai = bootsSymDecrypt(&remainder[i], key)>0;
+          answer |= (ai<<i);
+        }
+        std::cout<<answer<<" ";
+    }
+    fclose(answer_data);
     
     //Fix X.509.v3
     // SHA256 sha;
