@@ -1,4 +1,16 @@
 cmake_minimum_required(VERSION 3.12)
+set(CMAKE_CXX_STANDARD 17)
+## Disable C++ extensions
+set(CMAKE_CXX_EXTENSIONS OFF)
+## Require full C++ standard
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+project(HELibDemo VERSION 1.0)
+
+# 开启调试信息
+set(CMAKE_BUILD_TYPE "Debug")
+set(CMAKE_CXX_FLAGS_DEBUG "$ENV{CXXFLAGS} -O0 -Wall -g2 -ggdb")
+set(CMAKE_CXX_FLAGS_RELEASE "$ENV{CXXFLAGS} -O3 -Wall")
+
 project(ABY LANGUAGES CXX)
 find_package(ABY QUIET)
 find_package(ENCRYPTO_utils QUIET)
@@ -15,7 +27,7 @@ add_executable(server_step2 server_step2.cpp server_folder/server_step2_circuit.
 add_executable(client_step1 client_step1.cpp)
 add_executable(server_step1 server_step1.cpp SHA256.cpp)
 target_link_libraries(client_step1 -ltfhe-spqlios-fma)
-target_link_libraries(server_step1 -ltfhe-spqlios-fma)
+target_link_libraries(server_step1 -ltfhe-spqlios-fma -lpthread)
 
 target_link_libraries(client_step2 -ltfhe-spqlios-fma ABY::aby ENCRYPTO_utils::encrypto_utils)
 target_link_libraries(server_step2 ABY::aby ENCRYPTO_utils::encrypto_utils)
